@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SeaDog</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            color: #e5e5e5;
+            overflow-x: hidden;
+        }
+        .pirate-title {
+            font-family: 'Pirata One', cursive;
+            font-size: 2.5rem;
+            letter-spacing: 0.02em;
+            color: #ffffff;
+        }
+        .channel-card {
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+            border: 2px solid transparent;
+            background: #111;
+            outline: none;
+        }
+        .channel-card:hover,
+        .channel-card:focus {
+            border-color: #4a4a4a;
+            background: #161616;
+        }
+        .channel-card:focus .play-overlay {
+            opacity: 1;
+        }
+        .play-overlay {
+            opacity: 0;
+            transition: opacity 0.2s;
+            background: rgba(0, 0, 0, 0.6);
+            pointer-events: none;
+        }
+        .category-row {
+            scroll-behavior: smooth;
+        }
+        .category-row::-webkit-scrollbar {
+            height: 4px;
+        }
+        .category-row::-webkit-scrollbar-track {
+            background: #111;
+        }
+        .category-row::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="border-b border-[#1f1f1f] bg-black/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-full px-4 py-4">
+            <h1 class="pirate-title">SeaDog</h1>
+        </div>
+    </header>
+
+    <main class="pb-20">
+        <div id="content"></div>
+    </main>
+
+    <div id="player" class="fixed inset-0 z-50 hidden bg-black">
+        <div class="h-full flex flex-col">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-[#1f1f1f]">
+                <div class="flex items-center gap-3">
+                    <img id="modalLogo" src="" alt="" class="w-7 h-7 rounded bg-[#1a1a1a] object-cover">
+                    <span id="modalName" class="text-sm font-medium"></span>
+                </div>
+                <button onclick="closePlayer()" class="text-gray-500 hover:text-gray-300 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="flex-1 bg-black">
+                <iframe id="modalIframe" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
+        const content = document.getElementById('content');
+        const player = document.getElementById('player');
+        const iframe = document.getElementById('modalIframe');
+        const modalLogo = document.getElementById('modalLogo');
+        const modalName = document.getElementById('modalName');
+
+        let allChannels = [];
+        let categories = {};
+        let playerOpen = false;
+        let playerCategory = '';
+        let playerChannel = 0;
+
+        const genreLabels = {
+            'premiere': 'Canais Premiere',
+            'espn': 'Canais ESPN',
+            'sports': 'Esportes',
+            'news': 'Notícias',
+            'entertainment': 'Entretenimento',
+            'kids': 'Infantil',
+            'movies': 'Filmes',
+            'music': 'Música',
+            'documentary': 'Documentário',
+            'religion': 'Religião',
+            'general': 'Geral',
+            'adult': 'Adulto'
+        };
+
+        function getRecents() {
+            try {
+                return JSON.parse(localStorage.getItem('seadog_recents') || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function addRecent(channel) {
+            let recents = getRecents();
+            recents = recents.filter(r => r.slug !== channel.slug);
+            recents.unshift(channel);
+            recents = recents.slice(0, 5);
+            localStorage.setItem('seadog_recents', JSON.stringify(recents));
+        }
+
+        function buildCategories() {
+            categories = {};
+            allChannels.forEach(channel => {
+                const genre = channel.genre || 'general';
+                if (!categories[genre]) {
+                    categories[genre] = [];
+                }
+                categories[genre].push(channel);
+            });
+
+            Object.keys(categories).forEach(key => {
+                categories[key].sort((a, b) => {
+                    if (a.status === 'online' && b.status !== 'online') return -1;
+                    if (a.status !== 'online' && b.status === 'online') return 1;
+                    return a.name.localeCompare(b.name);
+                });
+            });
+        }
+
+        function cardTemplate(channel, categoryKey, index) {
+            const cover = channel.cover || channel.logo;
+            const logo = channel.logo || channel.cover;
+            return `
+                <div class="channel-card rounded-lg overflow-hidden flex-shrink-0 w-40 sm:w-48 md:w-56" 
+                     tabindex="0"
+                     data-category="${categoryKey}"
+                     data-index="${index}"
+                     data-slug="${channel.slug}"
+                     onclick='openPlayer("${categoryKey}", ${index})'>
+                    <div class="relative aspect-video bg-[#1a1a1a]">
+                        <img src="${cover}" alt="${channel.name}" class="w-full h-full object-cover" 
+                             onerror="this.style.display='none'">
+                        <div class="play-overlay absolute inset-0 flex items-center justify-center">
+                            <i class="fa-solid fa-play text-white text-xl"></i>
+                        </div>
+                        ${channel.status !== 'online' ? 
+                            '<span class="absolute top-2 right-2 text-[10px] bg-red-900/80 text-red-300 px-2 py-0.5 rounded">OFF</span>' : ''}
+                    </div>
+                    <div class="p-2 flex items-center gap-2">
+                        <img src="${logo}" alt="" class="w-5 h-5 rounded object-cover bg-[#1a1a1a]" 
+                             onerror="this.style.display='none'">
+                        <h3 class="text-xs font-medium truncate">${channel.name}</h3>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContent() {
+            buildCategories();
+            const recents = getRecents();
+            let html = '';
+
+            if (recents.length > 0) {
+                html += `
+                    <div class="mb-8 px-4">
+                        <h2 class="text-lg font-semibold mb-3 px-2">Recentes</h2>
+                        <div class="flex gap-3 overflow-x-auto category-row px-2 pb-2">
+                            ${recents.map((channel, i) => cardTemplate(channel, 'recents', i)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const categoryKeys = Object.keys(categories);
+            categoryKeys.forEach((key) => {
+                const channels = categories[key];
+                html += `
+                    <div class="mb-8 px-4">
+                        <h2 class="text-lg font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
+                        <div class="flex gap-3 overflow-x-auto category-row px-2 pb-2">
+                            ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+        }
+
+        function openPlayer(categoryKey, index) {
+            const channel = categoryKey === 'recents' ? 
+                getRecents()[index] : 
+                categories[categoryKey][index];
+
+            if (!channel) return;
+
+            playerCategory = categoryKey;
+            playerChannel = index;
+            playerOpen = true;
+
+            iframe.src = channel.url;
+            modalLogo.src = channel.logo || channel.cover;
+            modalName.textContent = channel.name;
+            player.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            addRecent(channel);
+        }
+
+        function closePlayer() {
+            playerOpen = false;
+            player.classList.add('hidden');
+            iframe.src = '';
+            document.body.style.overflow = '';
+            renderContent();
+        }
+
+        function navigatePlayer(direction) {
+            const catKeys = ['recents', ...Object.keys(categories)].filter(key => {
+                if (key === 'recents') return getRecents().length > 0;
+                return categories[key]?.length > 0;
+            });
+
+            if (catKeys.length === 0) return;
+
+            const currentCatIndex = catKeys.indexOf(playerCategory);
+            if (currentCatIndex === -1) return;
+
+            const currentChannels = playerCategory === 'recents' ? 
+                getRecents() : 
+                categories[playerCategory];
+
+            if (!currentChannels?.length) return;
+
+            if (direction === 'left' || direction === 'right') {
+                const newIndex = direction === 'left' ? 
+                    (playerChannel - 1 + currentChannels.length) % currentChannels.length : 
+                    (playerChannel + 1) % currentChannels.length;
+                openPlayer(playerCategory, newIndex);
+            } else if (direction === 'up' || direction === 'down') {
+                const newCatIndex = direction === 'up' ? 
+                    (currentCatIndex - 1 + catKeys.length) % catKeys.length : 
+                    (currentCatIndex + 1) % catKeys.length;
+                const newCategory = catKeys[newCatIndex];
+                const newChannels = newCategory === 'recents' ? getRecents() : categories[newCategory];
+                if (newChannels?.length > 0) {
+                    openPlayer(newCategory, 0);
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (playerOpen) {
+                switch(e.key) {
+                    case 'Escape':
+                        closePlayer();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        navigatePlayer('left');
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        navigatePlayer('right');
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        navigatePlayer('up');
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        navigatePlayer('down');
+                        break;
+                }
+            } else {
+                if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;
+
+                e.preventDefault();
+                const cards = Array.from(document.querySelectorAll('.channel-card'));
+                if (cards.length === 0) return;
+
+                const focusedIndex = cards.findIndex(card => card === document.activeElement);
+
+                if (focusedIndex === -1) {
+                    cards[0]?.focus();
+                    return;
+                }
+
+                const currentCard = cards[focusedIndex];
+                const currentRow = currentCard.closest('.category-row');
+                const currentRowIndex = Array.from(currentRow.children).indexOf(currentCard);
+
+                switch(e.key) {
+                    case 'ArrowRight':
+                        if (focusedIndex < cards.length - 1 && cards[focusedIndex + 1].closest('.category-row') === currentRow) {
+                            cards[focusedIndex + 1].focus();
+                            cards[focusedIndex + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        if (focusedIndex > 0 && cards[focusedIndex - 1].closest('.category-row') === currentRow) {
+                            cards[focusedIndex - 1].focus();
+                            cards[focusedIndex - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                        break;
+                    case 'ArrowDown':
+                        const nextRow = currentRow.closest('.mb-8')?.nextElementSibling?.querySelector('.category-row');
+                        if (nextRow) {
+                            const nextCards = nextRow.children;
+                            const targetIndex = Math.min(currentRowIndex, nextCards.length - 1);
+                            nextCards[targetIndex]?.focus();
+                            nextCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                        break;
+                    case 'ArrowUp':
+                        const prevRow = currentRow.closest('.mb-8')?.previousElementSibling?.querySelector('.category-row');
+                        if (prevRow) {
+                            const prevCards = prevRow.children;
+                            const targetIndex = Math.min(currentRowIndex, prevCards.length - 1);
+                            prevCards[targetIndex]?.focus();
+                            prevCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
+                        break;
+                    case 'Enter':
+                        currentCard.click();
+                        break;
+                }
+            }
+        });
+
+        async function loadChannels() {
+            try {
+                const res = await fetch(API);
+                allChannels = await res.json();
+                renderContent();
+                const firstCard = document.querySelector('.channel-card');
+                if (firstCard) firstCard.focus();
+            } catch {
+                content.innerHTML = `
+                    <div class="text-center py-20 text-gray-600">
+                        <i class="fa-solid fa-exclamation-circle text-2xl mb-3"></i>
+                        <p class="text-sm">Erro ao carregar canais</p>
+                        <button onclick="loadChannels()" class="mt-3 text-gray-400 hover:text-gray-300 text-sm underline">
+                            Tentar novamente
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        loadChannels();
+    </script>
+</body>
+</html>
