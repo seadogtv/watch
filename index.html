@@ -10,7 +10,7 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@100;200;300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
         * {
             font-family: 'Inter', sans-serif;
         }
@@ -25,13 +25,15 @@
             font-size: 1.75rem;
             letter-spacing: 0.02em;
             color: #ffffff;
+            text-transform: lowercase;
         }
         .tv-title {
             font-family: 'Inter', sans-serif;
-            font-weight: 100;
+            font-weight: 500;
             font-size: 1.5rem;
-            letter-spacing: 0.15em;
-            color: #a0a0a0;
+            letter-spacing: 0.02em;
+            color: #888888;
+            margin-left: 2px;
         }
         .logo-container {
             width: 32px;
@@ -51,6 +53,18 @@
             border: 2px solid transparent;
             background: #111;
             outline: none;
+            flex-shrink: 0;
+            width: 160px;
+        }
+        @media (min-width: 640px) {
+            .channel-card {
+                width: 180px;
+            }
+        }
+        @media (min-width: 768px) {
+            .channel-card {
+                width: 200px;
+            }
         }
         .channel-card:hover,
         .channel-card:focus {
@@ -73,6 +87,8 @@
             overflow-x: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            display: flex;
+            gap: 0.75rem;
         }
         .category-row::-webkit-scrollbar {
             display: none;
@@ -109,30 +125,6 @@
         #mainScroll::-webkit-scrollbar {
             display: none;
         }
-        .shadow-top {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(to bottom, rgba(10, 10, 10, 0.9), transparent);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 30;
-        }
-        .shadow-bottom {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(to top, rgba(10, 10, 10, 0.9), transparent);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 30;
-        }
         header {
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -168,24 +160,32 @@
         .minimize-btn:hover {
             background: rgba(255, 255, 255, 0.1);
         }
+        footer {
+            background: #0a0a0a;
+            border-top: 1px solid #1f1f1f;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
     <header class="sticky top-0 z-40">
         <div class="max-w-full px-4 py-2.5 flex items-center gap-3">
             <div class="logo-container">
-                <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="Seadogtv">
+                <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="seadogtv">
             </div>
             <h1 class="pirate-title">seadog<span class="tv-title">tv</span></h1>
         </div>
     </header>
 
-    <div class="shadow-top" id="shadowTop"></div>
-    <div class="shadow-bottom" id="shadowBottom"></div>
-
-    <main id="mainScroll">
+    <main id="mainScroll" class="flex-1">
         <div id="content"></div>
+        <footer>
+            <p>seadogtv © 2024 - Todos os direitos reservados</p>
+        </footer>
     </main>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
@@ -207,8 +207,6 @@
         const API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
         const content = document.getElementById('content');
         const mainScroll = document.getElementById('mainScroll');
-        const shadowTop = document.getElementById('shadowTop');
-        const shadowBottom = document.getElementById('shadowBottom');
         const player = document.getElementById('player');
         const iframe = document.getElementById('modalIframe');
         const modalLogo = document.getElementById('modalLogo');
@@ -223,6 +221,7 @@
         let headerTimeout;
 
         const genreLabels = {
+            '24h': 'Ao vivo 24 horas',
             'premiere': 'Canais Premiere',
             'espn': 'Canais ESPN',
             'sports': 'Esportes',
@@ -260,7 +259,7 @@
             const cover = channel.cover || channel.logo;
             const logo = channel.logo || channel.cover;
             return `
-                <div class="channel-card rounded-lg overflow-hidden flex-shrink-0 w-40 sm:w-48 md:w-56" 
+                <div class="channel-card rounded-lg overflow-hidden" 
                      tabindex="0"
                      data-category="${categoryKey}"
                      data-index="${index}"
@@ -295,7 +294,7 @@
                     <div class="mb-8 px-4">
                         <h2 class="text-lg font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
                         <div class="category-row-wrapper">
-                            <div class="category-row flex gap-3 px-2 pb-2" data-category="${key}">
+                            <div class="category-row px-2 pb-2" data-category="${key}">
                                 ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
                             </div>
                             <div class="shadow-left" data-shadow-left="${key}"></div>
@@ -312,7 +311,8 @@
                     updateShadows(row);
                     row.addEventListener('scroll', () => updateShadows(row));
                 });
-                updateMainShadows();
+                const firstCard = document.querySelector('.channel-card');
+                if (firstCard && !playerOpen) firstCard.focus();
             });
         }
 
@@ -329,16 +329,6 @@
 
             shadowLeft.style.opacity = scrollLeft > 0 ? '1' : '0';
             shadowRight.style.opacity = (hasOverflow && scrollLeft < maxScroll) ? '1' : '0';
-        }
-
-        function updateMainShadows() {
-            const scrollTop = mainScroll.scrollTop;
-            const scrollHeight = mainScroll.scrollHeight;
-            const clientHeight = mainScroll.clientHeight;
-            const maxScroll = scrollHeight - clientHeight;
-
-            shadowTop.style.opacity = scrollTop > 0 ? '1' : '0';
-            shadowBottom.style.opacity = (scrollHeight > clientHeight && scrollTop < maxScroll) ? '1' : '0';
         }
 
         function showPlayerHeader() {
@@ -414,12 +404,6 @@
             }
         }
 
-        mainScroll.addEventListener('scroll', updateMainShadows);
-        window.addEventListener('resize', () => {
-            document.querySelectorAll('.category-row').forEach(row => updateShadows(row));
-            updateMainShadows();
-        });
-
         player.addEventListener('mousemove', () => {
             if (playerOpen) {
                 showPlayerHeader();
@@ -473,26 +457,27 @@
 
                 const currentCard = cards[focusedIndex];
                 const currentRow = currentCard.closest('.category-row');
-                const currentRowIndex = Array.from(currentRow.children).indexOf(currentCard);
+                const cardsInRow = Array.from(currentRow.children);
+                const currentIndexInRow = cardsInRow.indexOf(currentCard);
 
                 switch(e.key) {
                     case 'ArrowRight':
-                        if (focusedIndex < cards.length - 1 && cards[focusedIndex + 1].closest('.category-row') === currentRow) {
-                            cards[focusedIndex + 1].focus();
-                            cards[focusedIndex + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        if (currentIndexInRow < cardsInRow.length - 1) {
+                            cardsInRow[currentIndexInRow + 1].focus();
+                            cardsInRow[currentIndexInRow + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
                         break;
                     case 'ArrowLeft':
-                        if (focusedIndex > 0 && cards[focusedIndex - 1].closest('.category-row') === currentRow) {
-                            cards[focusedIndex - 1].focus();
-                            cards[focusedIndex - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        if (currentIndexInRow > 0) {
+                            cardsInRow[currentIndexInRow - 1].focus();
+                            cardsInRow[currentIndexInRow - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
                         break;
                     case 'ArrowDown':
                         const nextRow = currentRow.closest('.mb-8')?.nextElementSibling?.querySelector('.category-row');
                         if (nextRow) {
                             const nextCards = nextRow.children;
-                            const targetIndex = Math.min(currentRowIndex, nextCards.length - 1);
+                            const targetIndex = Math.min(currentIndexInRow, nextCards.length - 1);
                             nextCards[targetIndex]?.focus();
                             nextCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
@@ -501,7 +486,7 @@
                         const prevRow = currentRow.closest('.mb-8')?.previousElementSibling?.querySelector('.category-row');
                         if (prevRow) {
                             const prevCards = prevRow.children;
-                            const targetIndex = Math.min(currentRowIndex, prevCards.length - 1);
+                            const targetIndex = Math.min(currentIndexInRow, prevCards.length - 1);
                             prevCards[targetIndex]?.focus();
                             prevCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                         }
@@ -518,8 +503,6 @@
                 const res = await fetch(API);
                 allChannels = await res.json();
                 renderContent();
-                const firstCard = document.querySelector('.channel-card');
-                if (firstCard) firstCard.focus();
             } catch {
                 content.innerHTML = `
                     <div class="text-center py-20 text-gray-600">
