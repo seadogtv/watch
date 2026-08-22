@@ -161,16 +161,6 @@
         .minimize-btn:hover {
             background: rgba(255, 255, 255, 0.1);
         }
-        .iframe-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 5;
-            background: transparent;
-            cursor: default;
-        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -194,7 +184,6 @@
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
         <div class="relative h-full">
             <iframe id="modalIframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <div class="iframe-overlay" id="iframeOverlay"></div>
             <div class="player-header flex items-center justify-between px-5 py-4" id="playerHeader">
                 <div class="flex items-center gap-3">
                     <img id="modalLogo" src="" alt="" class="w-7 h-7 rounded bg-[#1a1a1a] object-cover">
@@ -218,7 +207,6 @@
         const modalLogo = document.getElementById('modalLogo');
         const modalName = document.getElementById('modalName');
         const playerHeader = document.getElementById('playerHeader');
-        const iframeOverlay = document.getElementById('iframeOverlay');
 
         let allChannels = [];
         let categories = {};
