@@ -139,6 +139,12 @@
             z-index: 10;
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
             pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .player-header.hidden-header {
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
         }
         .player-header > * {
             pointer-events: auto;
@@ -177,8 +183,8 @@
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
         <div class="relative h-full">
-            <iframe id="modalIframe" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
-            <div class="player-header flex items-center justify-between px-5 py-4">
+            <iframe id="modalIframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <div class="player-header flex items-center justify-between px-5 py-4" id="playerHeader">
                 <div class="flex items-center gap-3">
                     <img id="modalLogo" src="" alt="" class="w-7 h-7 rounded bg-[#1a1a1a] object-cover">
                     <span id="modalName" class="text-sm font-medium"></span>
@@ -200,12 +206,14 @@
         const iframe = document.getElementById('modalIframe');
         const modalLogo = document.getElementById('modalLogo');
         const modalName = document.getElementById('modalName');
+        const playerHeader = document.getElementById('playerHeader');
 
         let allChannels = [];
         let categories = {};
         let playerOpen = false;
         let playerCategory = '';
         let playerChannel = 0;
+        let headerTimeout;
 
         const genreLabels = {
             'premiere': 'Canais Premiere',
@@ -326,6 +334,14 @@
             shadowBottom.style.opacity = (scrollHeight > clientHeight && scrollTop < maxScroll) ? '1' : '0';
         }
 
+        function showPlayerHeader() {
+            playerHeader.classList.remove('hidden-header');
+            clearTimeout(headerTimeout);
+            headerTimeout = setTimeout(() => {
+                playerHeader.classList.add('hidden-header');
+            }, 3000);
+        }
+
         function openPlayer(categoryKey, index) {
             const channel = categories[categoryKey][index];
 
@@ -335,12 +351,13 @@
             playerChannel = index;
             playerOpen = true;
 
-            iframe.src = channel.url;
+            iframe.src = channel.url + (channel.url.includes('?') ? '&' : '?') + 'autoplay=1';
             modalLogo.src = channel.logo || channel.cover;
             modalName.textContent = channel.name;
             player.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             
+            showPlayerHeader();
             history.pushState({ playerOpen: true }, '');
         }
 
@@ -349,6 +366,7 @@
             player.classList.add('hidden');
             iframe.src = '';
             document.body.style.overflow = '';
+            playerHeader.classList.remove('hidden-header');
             
             if (history.state?.playerOpen) {
                 history.back();
@@ -361,6 +379,7 @@
                 player.classList.add('hidden');
                 iframe.src = '';
                 document.body.style.overflow = '';
+                playerHeader.classList.remove('hidden-header');
             }
         });
 
@@ -394,8 +413,21 @@
             updateMainShadows();
         });
 
+        player.addEventListener('mousemove', () => {
+            if (playerOpen) {
+                showPlayerHeader();
+            }
+        });
+
+        player.addEventListener('touchstart', () => {
+            if (playerOpen) {
+                showPlayerHeader();
+            }
+        });
+
         document.addEventListener('keydown', (e) => {
             if (playerOpen) {
+                showPlayerHeader();
                 switch(e.key) {
                     case 'Escape':
                     case 'Backspace':
