@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SeaDog</title>
+    <title>Seadog</title>
     <script src="https://cdn.tailwindcss.com">
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -15,7 +15,8 @@
         body {
             background: #0a0a0a;
             color: #e5e5e5;
-            overflow-x: hidden;
+            overflow: hidden;
+            height: 100vh;
         }
         .pirate-title {
             font-family: 'Pirata One', cursive;
@@ -44,18 +45,72 @@
             background: rgba(0, 0, 0, 0.6);
             pointer-events: none;
         }
+        .category-row-wrapper {
+            position: relative;
+        }
         .category-row {
-            scroll-behavior: smooth;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         .category-row::-webkit-scrollbar {
-            height: 4px;
+            display: none;
         }
-        .category-row::-webkit-scrollbar-track {
-            background: #111;
+        .shadow-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 60px;
+            background: linear-gradient(to left, rgba(10, 10, 10, 0.9), transparent);
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s;
         }
-        .category-row::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 2px;
+        .shadow-left {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 60px;
+            background: linear-gradient(to right, rgba(10, 10, 10, 0.9), transparent);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #mainScroll {
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            height: calc(100vh - 73px);
+            position: relative;
+        }
+        #mainScroll::-webkit-scrollbar {
+            display: none;
+        }
+        .shadow-top {
+            position: fixed;
+            top: 73px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(10, 10, 10, 0.9), transparent);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 30;
+        }
+        .shadow-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to top, rgba(10, 10, 10, 0.9), transparent);
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s;
+            z-index: 30;
         }
     </style>
 </head>
@@ -63,11 +118,14 @@
 
     <header class="border-b border-[#1f1f1f] bg-black/50 backdrop-blur sticky top-0 z-40">
         <div class="max-w-full px-4 py-4">
-            <h1 class="pirate-title">SeaDog</h1>
+            <h1 class="pirate-title">Seadog</h1>
         </div>
     </header>
 
-    <main class="pb-20">
+    <div class="shadow-top" id="shadowTop"></div>
+    <div class="shadow-bottom" id="shadowBottom"></div>
+
+    <main id="mainScroll">
         <div id="content"></div>
     </main>
 
@@ -91,6 +149,9 @@
     <script>
         const API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
         const content = document.getElementById('content');
+        const mainScroll = document.getElementById('mainScroll');
+        const shadowTop = document.getElementById('shadowTop');
+        const shadowBottom = document.getElementById('shadowBottom');
         const player = document.getElementById('player');
         const iframe = document.getElementById('modalIframe');
         const modalLogo = document.getElementById('modalLogo');
@@ -116,22 +177,6 @@
             'general': 'Geral',
             'adult': 'Adulto'
         };
-
-        function getRecents() {
-            try {
-                return JSON.parse(localStorage.getItem('seadog_recents') || '[]');
-            } catch {
-                return [];
-            }
-        }
-
-        function addRecent(channel) {
-            let recents = getRecents();
-            recents = recents.filter(r => r.slug !== channel.slug);
-            recents.unshift(channel);
-            recents = recents.slice(0, 5);
-            localStorage.setItem('seadog_recents', JSON.stringify(recents));
-        }
 
         function buildCategories() {
             categories = {};
@@ -182,19 +227,7 @@
 
         function renderContent() {
             buildCategories();
-            const recents = getRecents();
             let html = '';
-
-            if (recents.length > 0) {
-                html += `
-                    <div class="mb-8 px-4">
-                        <h2 class="text-lg font-semibold mb-3 px-2">Recentes</h2>
-                        <div class="flex gap-3 overflow-x-auto category-row px-2 pb-2">
-                            ${recents.map((channel, i) => cardTemplate(channel, 'recents', i)).join('')}
-                        </div>
-                    </div>
-                `;
-            }
 
             const categoryKeys = Object.keys(categories);
             categoryKeys.forEach((key) => {
@@ -202,20 +235,54 @@
                 html += `
                     <div class="mb-8 px-4">
                         <h2 class="text-lg font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
-                        <div class="flex gap-3 overflow-x-auto category-row px-2 pb-2">
-                            ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
+                        <div class="category-row-wrapper">
+                            <div class="category-row flex gap-3 px-2 pb-2" data-category="${key}">
+                                ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
+                            </div>
+                            <div class="shadow-left" data-shadow-left="${key}"></div>
+                            <div class="shadow-right" data-shadow-right="${key}"></div>
                         </div>
                     </div>
                 `;
             });
 
             content.innerHTML = html;
+
+            document.querySelectorAll('.category-row').forEach(row => {
+                updateShadows(row);
+                row.addEventListener('scroll', () => updateShadows(row));
+            });
+
+            updateMainShadows();
+        }
+
+        function updateShadows(row) {
+            const category = row.dataset.category;
+            const shadowLeft = document.querySelector(`[data-shadow-left="${category}"]`);
+            const shadowRight = document.querySelector(`[data-shadow-right="${category}"]`);
+
+            if (!shadowLeft || !shadowRight) return;
+
+            const hasOverflow = row.scrollWidth > row.clientWidth;
+            const scrollLeft = row.scrollLeft;
+            const maxScroll = row.scrollWidth - row.clientWidth;
+
+            shadowLeft.style.opacity = scrollLeft > 0 ? '1' : '0';
+            shadowRight.style.opacity = (hasOverflow && scrollLeft < maxScroll) ? '1' : '0';
+        }
+
+        function updateMainShadows() {
+            const scrollTop = mainScroll.scrollTop;
+            const scrollHeight = mainScroll.scrollHeight;
+            const clientHeight = mainScroll.clientHeight;
+            const maxScroll = scrollHeight - clientHeight;
+
+            shadowTop.style.opacity = scrollTop > 0 ? '1' : '0';
+            shadowBottom.style.opacity = (scrollHeight > clientHeight && scrollTop < maxScroll) ? '1' : '0';
         }
 
         function openPlayer(categoryKey, index) {
-            const channel = categoryKey === 'recents' ? 
-                getRecents()[index] : 
-                categories[categoryKey][index];
+            const channel = categories[categoryKey][index];
 
             if (!channel) return;
 
@@ -228,7 +295,6 @@
             modalName.textContent = channel.name;
             player.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-            addRecent(channel);
         }
 
         function closePlayer() {
@@ -236,24 +302,16 @@
             player.classList.add('hidden');
             iframe.src = '';
             document.body.style.overflow = '';
-            renderContent();
         }
 
         function navigatePlayer(direction) {
-            const catKeys = ['recents', ...Object.keys(categories)].filter(key => {
-                if (key === 'recents') return getRecents().length > 0;
-                return categories[key]?.length > 0;
-            });
-
+            const catKeys = Object.keys(categories).filter(key => categories[key]?.length > 0);
             if (catKeys.length === 0) return;
 
             const currentCatIndex = catKeys.indexOf(playerCategory);
             if (currentCatIndex === -1) return;
 
-            const currentChannels = playerCategory === 'recents' ? 
-                getRecents() : 
-                categories[playerCategory];
-
+            const currentChannels = categories[playerCategory];
             if (!currentChannels?.length) return;
 
             if (direction === 'left' || direction === 'right') {
@@ -266,12 +324,11 @@
                     (currentCatIndex - 1 + catKeys.length) % catKeys.length : 
                     (currentCatIndex + 1) % catKeys.length;
                 const newCategory = catKeys[newCatIndex];
-                const newChannels = newCategory === 'recents' ? getRecents() : categories[newCategory];
-                if (newChannels?.length > 0) {
-                    openPlayer(newCategory, 0);
-                }
+                openPlayer(newCategory, 0);
             }
         }
+
+        mainScroll.addEventListener('scroll', updateMainShadows);
 
         document.addEventListener('keydown', (e) => {
             if (playerOpen) {
