@@ -13,12 +13,25 @@
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
         * {
             font-family: 'Inter', sans-serif;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        img {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+            pointer-events: none;
         }
         body {
             background: #0a0a0a;
             color: #e5e5e5;
             overflow: hidden;
             height: 100vh;
+            position: relative;
         }
         .pirate-title {
             font-family: 'Pirata One', cursive;
@@ -35,17 +48,21 @@
             color: #888888;
             margin-left: 2px;
         }
-        .logo-container {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .login-btn {
+            color: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
         }
-        .logo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        .login-btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
         .channel-card {
             cursor: pointer;
@@ -112,9 +129,6 @@
                 font-size: 3rem;
             }
         }
-        .category-row-wrapper {
-            position: relative;
-        }
         .category-row {
             overflow-x: auto;
             scrollbar-width: none;
@@ -140,66 +154,31 @@
         .category-row::-webkit-scrollbar {
             display: none;
         }
-        .shadow-right {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 60px;
-            background: linear-gradient(to left, rgba(10, 10, 10, 0.9), transparent);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: none;
-        }
-        @media (min-width: 1024px) {
-            .shadow-right {
-                width: 80px;
-            }
-        }
-        @media (min-width: 1440px) {
-            .shadow-right {
-                width: 100px;
-            }
-        }
-        .shadow-left {
-            position: absolute;
+        header {
+            position: fixed;
             top: 0;
             left: 0;
-            bottom: 0;
-            width: 60px;
-            background: linear-gradient(to right, rgba(10, 10, 10, 0.9), transparent);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: none;
-        }
-        @media (min-width: 1024px) {
-            .shadow-left {
-                width: 80px;
-            }
-        }
-        @media (min-width: 1440px) {
-            .shadow-left {
-                width: 100px;
-            }
+            right: 0;
+            z-index: 40;
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
         #mainScroll {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
             overflow-y: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
-            height: calc(100vh - 60px);
-            position: relative;
+            padding-top: 1rem;
             padding-bottom: 2rem;
             scroll-behavior: smooth;
         }
         #mainScroll::-webkit-scrollbar {
             display: none;
-        }
-        header {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(10, 10, 10, 0.7);
         }
         .player-header {
             position: absolute;
@@ -260,16 +239,16 @@
             transition: width 0.3s;
         }
         .category-title {
-            font-size: 1.25rem;
+            font-size: 1rem;
         }
         @media (min-width: 1024px) {
             .category-title {
-                font-size: 1.5rem;
+                font-size: 1.125rem;
             }
         }
         @media (min-width: 1440px) {
             .category-title {
-                font-size: 1.75rem;
+                font-size: 1.3125rem;
             }
         }
         .channel-name {
@@ -352,7 +331,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
     <div id="loadingScreen">
         <div class="loading-content flex items-center gap-3">
@@ -363,16 +342,14 @@
         </div>
     </div>
 
-    <header class="sticky top-0 z-40">
-        <div class="max-w-full px-4 py-3 flex items-center gap-3">
-            <div class="logo-container">
-                <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="seadogtv">
-            </div>
+    <header>
+        <div class="max-w-full px-4 py-3 flex items-center justify-between">
             <h1 class="pirate-title">seadog<span class="tv-title">tv</span></h1>
+            <button class="login-btn" onclick="handleLogin()">Entrar</button>
         </div>
     </header>
 
-    <main id="mainScroll" class="flex-1">
+    <main id="mainScroll">
         <div id="content"></div>
     </main>
 
@@ -388,13 +365,25 @@
                     </div>
                 </div>
                 <button onclick="closePlayer()" class="minimize-btn text-white">
-                    <i class="fa-solid fa-minus text-xl"></i>
+                    <i class="fa-solid fa-chevron-down text-xl"></i>
                 </button>
             </div>
         </div>
     </div>
 
     <script>
+        // Bloquear menu de contexto
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Bloquear arrasto de imagens
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        });
+
         const CHANNELS_API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
         const GUIDE_API = 'https://reidosembeds.online/api/channels';
         const content = document.getElementById('content');
@@ -439,6 +428,11 @@
             'general': 'Geral',
             'adult': 'Adulto'
         };
+
+        function handleLogin() {
+            // Placeholder para futura implementação
+            console.log('Entrar clicked');
+        }
 
         function hideLoadingScreen() {
             const elapsed = Date.now() - loadingStartTime;
@@ -580,14 +574,6 @@
                 }
                 categories[genre].push(channel);
             });
-
-            Object.keys(categories).forEach(key => {
-                categories[key].sort((a, b) => {
-                    if (a.status === 'online' && b.status !== 'online') return -1;
-                    if (a.status !== 'online' && b.status === 'online') return 1;
-                    return a.name.localeCompare(b.name);
-                });
-            });
         }
 
         function getGuideInfo(slug) {
@@ -661,12 +647,8 @@
                 html += `
                     <div class="mb-8 px-4">
                         <h2 class="category-title font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
-                        <div class="category-row-wrapper">
-                            <div class="category-row px-2 pb-2" data-category="${key}">
-                                ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
-                            </div>
-                            <div class="shadow-left" data-shadow-left="${key}"></div>
-                            <div class="shadow-right" data-shadow-right="${key}"></div>
+                        <div class="category-row px-2 pb-2" data-category="${key}">
+                            ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
                         </div>
                     </div>
                 `;
@@ -675,43 +657,11 @@
             content.innerHTML = html;
 
             requestAnimationFrame(() => {
-                document.querySelectorAll('.category-row').forEach(row => {
-                    updateShadows(row);
-                    row.addEventListener('scroll', () => updateShadows(row));
-                });
                 const firstCard = document.querySelector('.channel-card');
                 if (firstCard && !playerOpen) {
                     selectCard(firstCard, 'keyboard');
                 }
             });
-        }
-
-        function updateShadows(row) {
-            const category = row.dataset.category;
-            const shadowLeft = document.querySelector(`[data-shadow-left="${category}"]`);
-            const shadowRight = document.querySelector(`[data-shadow-right="${category}"]`);
-
-            if (!shadowLeft || !shadowRight) return;
-
-            const hasOverflow = row.scrollWidth > row.clientWidth;
-            const scrollLeft = row.scrollLeft;
-            const maxScroll = row.scrollWidth - row.clientWidth;
-
-            if (scrollLeft > 0) {
-                shadowLeft.style.display = 'block';
-                shadowLeft.style.opacity = '1';
-            } else {
-                shadowLeft.style.display = 'none';
-                shadowLeft.style.opacity = '0';
-            }
-
-            if (hasOverflow && scrollLeft < maxScroll) {
-                shadowRight.style.display = 'block';
-                shadowRight.style.opacity = '1';
-            } else {
-                shadowRight.style.display = 'none';
-                shadowRight.style.opacity = '0';
-            }
         }
 
         function showPlayerHeader() {
@@ -723,12 +673,17 @@
         }
 
         function openPlayer(categoryKey, index) {
-            const channel = categories[categoryKey][index];
+            const channel = categories[categoryKey]?.[index] || 
+                           Object.values(categories).flat().find(c => c.slug === index) ||
+                           allChannels[index];
 
             if (!channel) return;
 
-            playerCategory = categoryKey;
-            playerChannel = index;
+            const actualCategory = Object.keys(categories).find(key => categories[key].includes(channel)) || categoryKey;
+            const actualIndex = categories[actualCategory]?.indexOf(channel) ?? index;
+
+            playerCategory = actualCategory;
+            playerChannel = actualIndex;
             playerOpen = true;
 
             iframe.src = channel.url + (channel.url.includes('?') ? '&' : '?') + 'autoplay=1';
