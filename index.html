@@ -298,9 +298,70 @@
                 font-size: 0.875rem;
             }
         }
+        #loadingScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+        }
+        #loadingScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-logo-container {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .loading-title {
+            font-family: 'Pirata One', cursive;
+            font-size: 2.5rem;
+            letter-spacing: 0.02em;
+            color: #ffffff;
+            text-transform: lowercase;
+        }
+        .loading-tv-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 2rem;
+            letter-spacing: 0.02em;
+            color: #888888;
+            margin-left: 2px;
+        }
+        .loading-content {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
+
+    <div id="loadingScreen">
+        <div class="loading-content flex items-center gap-3">
+            <div class="loading-logo-container">
+                <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="seadogtv">
+            </div>
+            <h1 class="loading-title">seadog<span class="loading-tv-title">tv</span></h1>
+        </div>
+    </div>
 
     <header class="sticky top-0 z-40">
         <div class="max-w-full px-4 py-3 flex items-center gap-3">
@@ -344,6 +405,7 @@
         const modalName = document.getElementById('modalName');
         const modalNowPlaying = document.getElementById('modalNowPlaying');
         const playerHeader = document.getElementById('playerHeader');
+        const loadingScreen = document.getElementById('loadingScreen');
 
         let allChannels = [];
         let guideData = {};
@@ -358,6 +420,8 @@
         let lastMouseX = 0;
         let lastMouseY = 0;
         let scrollAnimationFrame = null;
+        let loadingStartTime = Date.now();
+        const MINIMUM_LOADING_TIME = 1500;
 
         const genreLabels = {
             'open': 'TV aberta',
@@ -376,17 +440,16 @@
             'adult': 'Adulto'
         };
 
-        function initTizenKeys() {
-            try {
-                if (typeof tizen !== 'undefined' && tizen.tvinputdevice) {
-                    const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Back'];
-                    keys.forEach(key => {
-                        try {
-                            tizen.tvinputdevice.registerKey(key);
-                        } catch (e) {}
-                    });
-                }
-            } catch (e) {}
+        function hideLoadingScreen() {
+            const elapsed = Date.now() - loadingStartTime;
+            const remaining = Math.max(0, MINIMUM_LOADING_TIME - elapsed);
+            
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 300);
+            }, remaining);
         }
 
         function smoothScrollTo(targetScroll) {
@@ -422,7 +485,7 @@
         function selectCard(card, source) {
             if (selectedCard === card) return;
             
-            if (source === 'keyboard' || source === 'tizen') {
+            if (source === 'keyboard') {
                 activeInput = 'keyboard';
                 mouseMoved = false;
             } else if (source === 'mouse') {
@@ -438,7 +501,7 @@
             card.classList.add('selected');
             card.focus();
             
-            if (source === 'keyboard' || source === 'tizen') {
+            if (source === 'keyboard') {
                 const row = card.closest('.mb-8');
                 const mainScrollRect = mainScroll.getBoundingClientRect();
                 const rowRect = row.getBoundingClientRect();
@@ -466,13 +529,13 @@
             switch(direction) {
                 case 'right':
                     if (currentIndexInRow < cardsInRow.length - 1) {
-                        selectCard(cardsInRow[currentIndexInRow + 1], 'tizen');
+                        selectCard(cardsInRow[currentIndexInRow + 1], 'keyboard');
                         cardsInRow[currentIndexInRow + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                     }
                     break;
                 case 'left':
                     if (currentIndexInRow > 0) {
-                        selectCard(cardsInRow[currentIndexInRow - 1], 'tizen');
+                        selectCard(cardsInRow[currentIndexInRow - 1], 'keyboard');
                         cardsInRow[currentIndexInRow - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                     }
                     break;
@@ -481,7 +544,7 @@
                     if (nextRow) {
                         const nextCards = nextRow.children;
                         const targetIndex = Math.min(currentIndexInRow, nextCards.length - 1);
-                        selectCard(nextCards[targetIndex], 'tizen');
+                        selectCard(nextCards[targetIndex], 'keyboard');
                         nextCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                     }
                     break;
@@ -490,15 +553,12 @@
                     if (prevRow) {
                         const prevCards = prevRow.children;
                         const targetIndex = Math.min(currentIndexInRow, prevCards.length - 1);
-                        selectCard(prevCards[targetIndex], 'tizen');
+                        selectCard(prevCards[targetIndex], 'keyboard');
                         prevCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                     }
                     break;
                 case 'enter':
                     currentCard.click();
-                    break;
-                case 'back':
-                    if (playerOpen) closePlayer();
                     break;
             }
         }
@@ -749,7 +809,6 @@
                 switch(e.key) {
                     case 'Escape':
                     case 'Backspace':
-                    case 'Back':
                         closePlayer();
                         break;
                     case 'ArrowLeft':
@@ -798,8 +857,9 @@
                 allChannels = await res.json();
                 await loadGuide();
                 renderContent();
-                initTizenKeys();
+                hideLoadingScreen();
             } catch {
+                hideLoadingScreen();
                 content.innerHTML = `
                     <div class="text-center py-20 text-gray-600">
                         <i class="fa-solid fa-exclamation-circle text-2xl mb-3"></i>
