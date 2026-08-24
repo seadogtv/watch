@@ -410,7 +410,7 @@
         let lastMouseY = 0;
         let scrollAnimationFrame = null;
         let loadingStartTime = Date.now();
-        const MINIMUM_LOADING_TIME = 2000;
+        const MINIMUM_LOADING_TIME = 1500;
 
         const genreLabels = {
             'general': 'Geral',
@@ -639,7 +639,7 @@
             buildCategories();
             let html = '';
 
-            const categoryOrder = ['open', '24h', 'premiere', 'espn', 'sports', 'news', 'entertainment', 'kids', 'movies', 'music', 'documentary', 'religion', 'general', 'adult'];
+            const categoryOrder = ['general', 'variety', '24h', 'sports', 'premiere', 'espn', 'movies', 'kids', 'music', 'documentary', 'entertainment', 'news', 'religion', 'adult'];
             const categoryKeys = categoryOrder.filter(key => categories[key]?.length > 0);
 
             categoryKeys.forEach((key) => {
