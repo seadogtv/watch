@@ -150,6 +150,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.3s;
+            display: none;
         }
         @media (min-width: 1024px) {
             .shadow-right {
@@ -171,6 +172,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.3s;
+            display: none;
         }
         @media (min-width: 1024px) {
             .shadow-left {
@@ -635,8 +637,21 @@
             const scrollLeft = row.scrollLeft;
             const maxScroll = row.scrollWidth - row.clientWidth;
 
-            shadowLeft.style.opacity = scrollLeft > 0 ? '1' : '0';
-            shadowRight.style.opacity = (hasOverflow && scrollLeft < maxScroll) ? '1' : '0';
+            if (scrollLeft > 0) {
+                shadowLeft.style.display = 'block';
+                shadowLeft.style.opacity = '1';
+            } else {
+                shadowLeft.style.display = 'none';
+                shadowLeft.style.opacity = '0';
+            }
+
+            if (hasOverflow && scrollLeft < maxScroll) {
+                shadowRight.style.display = 'block';
+                shadowRight.style.opacity = '1';
+            } else {
+                shadowRight.style.display = 'none';
+                shadowRight.style.opacity = '0';
+            }
         }
 
         function showPlayerHeader() {
