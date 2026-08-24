@@ -22,7 +22,7 @@
         }
         .pirate-title {
             font-family: 'Pirata One', cursive;
-            font-size: 1.75rem;
+            font-size: 2rem;
             letter-spacing: 0.02em;
             color: #ffffff;
             text-transform: lowercase;
@@ -30,14 +30,14 @@
         .tv-title {
             font-family: 'Inter', sans-serif;
             font-weight: 500;
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             letter-spacing: 0.02em;
             color: #888888;
             margin-left: 2px;
         }
         .logo-container {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -54,24 +54,43 @@
             background: #111;
             outline: none;
             flex-shrink: 0;
-            width: 160px;
+            width: 180px;
         }
-        @media (min-width: 640px) {
-            .channel-card {
-                width: 180px;
-            }
-        }
-        @media (min-width: 768px) {
+        @media (min-width: 480px) {
             .channel-card {
                 width: 200px;
             }
         }
-        .channel-card:hover,
-        .channel-card:focus {
+        @media (min-width: 768px) {
+            .channel-card {
+                width: 220px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .channel-card {
+                width: 260px;
+            }
+        }
+        @media (min-width: 1440px) {
+            .channel-card {
+                width: 300px;
+            }
+        }
+        @media (min-width: 1920px) {
+            .channel-card {
+                width: 340px;
+            }
+        }
+        @media (min-width: 2560px) {
+            .channel-card {
+                width: 400px;
+            }
+        }
+        .channel-card.selected {
             border-color: #4a4a4a;
             background: #161616;
         }
-        .channel-card:focus .play-overlay {
+        .channel-card.selected .play-overlay {
             opacity: 1;
         }
         .play-overlay {
@@ -79,6 +98,19 @@
             transition: opacity 0.2s;
             background: rgba(0, 0, 0, 0.6);
             pointer-events: none;
+        }
+        .play-overlay i {
+            font-size: 2rem;
+        }
+        @media (min-width: 1024px) {
+            .play-overlay i {
+                font-size: 2.5rem;
+            }
+        }
+        @media (min-width: 1440px) {
+            .play-overlay i {
+                font-size: 3rem;
+            }
         }
         .category-row-wrapper {
             position: relative;
@@ -88,7 +120,22 @@
             scrollbar-width: none;
             -ms-overflow-style: none;
             display: flex;
-            gap: 0.75rem;
+            gap: 0.875rem;
+        }
+        @media (min-width: 1024px) {
+            .category-row {
+                gap: 1rem;
+            }
+        }
+        @media (min-width: 1440px) {
+            .category-row {
+                gap: 1.25rem;
+            }
+        }
+        @media (min-width: 1920px) {
+            .category-row {
+                gap: 1.5rem;
+            }
         }
         .category-row::-webkit-scrollbar {
             display: none;
@@ -104,6 +151,16 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
+        @media (min-width: 1024px) {
+            .shadow-right {
+                width: 80px;
+            }
+        }
+        @media (min-width: 1440px) {
+            .shadow-right {
+                width: 100px;
+            }
+        }
         .shadow-left {
             position: absolute;
             top: 0;
@@ -115,12 +172,24 @@
             opacity: 0;
             transition: opacity 0.3s;
         }
+        @media (min-width: 1024px) {
+            .shadow-left {
+                width: 80px;
+            }
+        }
+        @media (min-width: 1440px) {
+            .shadow-left {
+                width: 100px;
+            }
+        }
         #mainScroll {
             overflow-y: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 60px);
             position: relative;
+            padding-bottom: 2rem;
+            scroll-behavior: smooth;
         }
         #mainScroll::-webkit-scrollbar {
             display: none;
@@ -149,31 +218,90 @@
             pointer-events: auto;
         }
         .minimize-btn {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
             transition: background-color 0.2s;
         }
+        @media (min-width: 1024px) {
+            .minimize-btn {
+                width: 48px;
+                height: 48px;
+            }
+        }
+        @media (min-width: 1440px) {
+            .minimize-btn {
+                width: 56px;
+                height: 56px;
+            }
+        }
         .minimize-btn:hover {
             background: rgba(255, 255, 255, 0.1);
         }
-        footer {
-            background: #0a0a0a;
-            border-top: 1px solid #1f1f1f;
-            padding: 1.5rem 1rem;
-            text-align: center;
-            color: #666;
-            font-size: 0.875rem;
+        .programme-info {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            padding: 0.75rem 0.5rem 0.5rem;
+        }
+        .progress-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ffffff;
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        .category-title {
+            font-size: 1.25rem;
+        }
+        @media (min-width: 1024px) {
+            .category-title {
+                font-size: 1.5rem;
+            }
+        }
+        @media (min-width: 1440px) {
+            .category-title {
+                font-size: 1.75rem;
+            }
+        }
+        .channel-name {
+            font-size: 0.75rem;
+        }
+        @media (min-width: 1024px) {
+            .channel-name {
+                font-size: 0.875rem;
+            }
+        }
+        @media (min-width: 1440px) {
+            .channel-name {
+                font-size: 1rem;
+            }
+        }
+        .now-playing-text {
+            font-size: 0.625rem;
+        }
+        @media (min-width: 1024px) {
+            .now-playing-text {
+                font-size: 0.75rem;
+            }
+        }
+        @media (min-width: 1440px) {
+            .now-playing-text {
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
     <header class="sticky top-0 z-40">
-        <div class="max-w-full px-4 py-2.5 flex items-center gap-3">
+        <div class="max-w-full px-4 py-3 flex items-center gap-3">
             <div class="logo-container">
                 <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="seadogtv">
             </div>
@@ -183,9 +311,6 @@
 
     <main id="mainScroll" class="flex-1">
         <div id="content"></div>
-        <footer>
-            <p>seadogtv © 2026</p>
-        </footer>
     </main>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
@@ -193,8 +318,11 @@
             <iframe id="modalIframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             <div class="player-header flex items-center justify-between px-5 py-4" id="playerHeader">
                 <div class="flex items-center gap-3">
-                    <img id="modalLogo" src="" alt="" class="w-7 h-7 rounded bg-[#1a1a1a] object-cover">
-                    <span id="modalName" class="text-sm font-medium"></span>
+                    <img id="modalLogo" src="" alt="" class="w-10 h-10 rounded bg-[#1a1a1a] object-cover flex-shrink-0">
+                    <div class="space-y-0.5">
+                        <span id="modalName" class="text-sm font-medium block"></span>
+                        <span id="modalNowPlaying" class="text-xs text-gray-300 block"></span>
+                    </div>
                 </div>
                 <button onclick="closePlayer()" class="minimize-btn text-white">
                     <i class="fa-solid fa-minus text-xl"></i>
@@ -204,21 +332,30 @@
     </div>
 
     <script>
-        const API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
+        const CHANNELS_API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
+        const GUIDE_API = 'https://reidosembeds.online/api/channels';
         const content = document.getElementById('content');
         const mainScroll = document.getElementById('mainScroll');
         const player = document.getElementById('player');
         const iframe = document.getElementById('modalIframe');
         const modalLogo = document.getElementById('modalLogo');
         const modalName = document.getElementById('modalName');
+        const modalNowPlaying = document.getElementById('modalNowPlaying');
         const playerHeader = document.getElementById('playerHeader');
 
         let allChannels = [];
+        let guideData = {};
         let categories = {};
         let playerOpen = false;
         let playerCategory = '';
         let playerChannel = 0;
         let headerTimeout;
+        let selectedCard = null;
+        let activeInput = 'keyboard';
+        let mouseMoved = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let scrollAnimationFrame = null;
 
         const genreLabels = {
             'open': 'TV aberta',
@@ -236,6 +373,141 @@
             'general': 'Geral',
             'adult': 'Adulto'
         };
+
+        function initTizenKeys() {
+            try {
+                if (typeof tizen !== 'undefined' && tizen.tvinputdevice) {
+                    const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Back'];
+                    keys.forEach(key => {
+                        try {
+                            tizen.tvinputdevice.registerKey(key);
+                        } catch (e) {}
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function smoothScrollTo(targetScroll) {
+            if (scrollAnimationFrame) {
+                cancelAnimationFrame(scrollAnimationFrame);
+            }
+            
+            const startScroll = mainScroll.scrollTop;
+            const difference = targetScroll - startScroll;
+            const duration = 600;
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easeInOutCubic = progress < 0.5 
+                    ? 4 * progress * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                
+                mainScroll.scrollTop = startScroll + difference * easeInOutCubic;
+                
+                if (progress < 1) {
+                    scrollAnimationFrame = requestAnimationFrame(animate);
+                } else {
+                    scrollAnimationFrame = null;
+                }
+            }
+            
+            scrollAnimationFrame = requestAnimationFrame(animate);
+        }
+
+        function selectCard(card, source) {
+            if (selectedCard === card) return;
+            
+            if (source === 'keyboard' || source === 'tizen') {
+                activeInput = 'keyboard';
+                mouseMoved = false;
+            } else if (source === 'mouse') {
+                if (activeInput === 'keyboard' && !mouseMoved) return;
+                activeInput = 'mouse';
+            }
+            
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+            
+            selectedCard = card;
+            card.classList.add('selected');
+            card.focus();
+            
+            if (source === 'keyboard' || source === 'tizen') {
+                const row = card.closest('.mb-8');
+                const mainScrollRect = mainScroll.getBoundingClientRect();
+                const rowRect = row.getBoundingClientRect();
+                const scrollTop = mainScroll.scrollTop;
+                const targetScroll = scrollTop + (rowRect.top - mainScrollRect.top) - (mainScrollRect.height / 2) + (rowRect.height / 2);
+                
+                smoothScrollTo(Math.max(0, targetScroll));
+            }
+        }
+
+        function navigateGrid(direction) {
+            if (playerOpen) {
+                navigatePlayer(direction);
+                return;
+            }
+            
+            const cards = Array.from(document.querySelectorAll('.channel-card'));
+            if (cards.length === 0) return;
+            
+            const currentCard = selectedCard || cards[0];
+            const currentRow = currentCard.closest('.category-row');
+            const cardsInRow = Array.from(currentRow.children);
+            const currentIndexInRow = cardsInRow.indexOf(currentCard);
+            
+            switch(direction) {
+                case 'right':
+                    if (currentIndexInRow < cardsInRow.length - 1) {
+                        selectCard(cardsInRow[currentIndexInRow + 1], 'tizen');
+                        cardsInRow[currentIndexInRow + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                    break;
+                case 'left':
+                    if (currentIndexInRow > 0) {
+                        selectCard(cardsInRow[currentIndexInRow - 1], 'tizen');
+                        cardsInRow[currentIndexInRow - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                    break;
+                case 'down':
+                    const nextRow = currentRow.closest('.mb-8')?.nextElementSibling?.querySelector('.category-row');
+                    if (nextRow) {
+                        const nextCards = nextRow.children;
+                        const targetIndex = Math.min(currentIndexInRow, nextCards.length - 1);
+                        selectCard(nextCards[targetIndex], 'tizen');
+                        nextCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                    break;
+                case 'up':
+                    const prevRow = currentRow.closest('.mb-8')?.previousElementSibling?.querySelector('.category-row');
+                    if (prevRow) {
+                        const prevCards = prevRow.children;
+                        const targetIndex = Math.min(currentIndexInRow, prevCards.length - 1);
+                        selectCard(prevCards[targetIndex], 'tizen');
+                        prevCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                    break;
+                case 'enter':
+                    currentCard.click();
+                    break;
+                case 'back':
+                    if (playerOpen) closePlayer();
+                    break;
+            }
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (e.clientX !== lastMouseX || e.clientY !== lastMouseY) {
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                mouseMoved = true;
+            }
+        });
 
         function buildCategories() {
             categories = {};
@@ -256,44 +528,77 @@
             });
         }
 
+        function getGuideInfo(slug) {
+            return guideData[slug] || null;
+        }
+
+        function truncateText(text, maxLength) {
+            if (!text) return '';
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+
         function cardTemplate(channel, categoryKey, index) {
             const cover = channel.cover || channel.logo;
             const logo = channel.logo || channel.cover;
+            const guide = getGuideInfo(channel.slug);
+            const nowPlaying = guide?.now_playing_title || '';
+            
             return `
                 <div class="channel-card rounded-lg overflow-hidden" 
                      tabindex="0"
                      data-category="${categoryKey}"
                      data-index="${index}"
                      data-slug="${channel.slug}"
+                     onmouseenter="handleCardMouseEnter(this)"
                      onclick='openPlayer("${categoryKey}", ${index})'>
                     <div class="relative aspect-video bg-[#1a1a1a]">
                         <img src="${cover}" alt="${channel.name}" class="w-full h-full object-cover" 
                              onerror="this.style.display='none'">
                         <div class="play-overlay absolute inset-0 flex items-center justify-center">
-                            <i class="fa-solid fa-play text-white text-xl"></i>
+                            <i class="fa-solid fa-play text-white"></i>
                         </div>
+                        ${nowPlaying ? `
+                        <div class="absolute bottom-0 left-0 right-0 programme-info">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="now-playing-text text-gray-300 truncate">${truncateText(nowPlaying, 30)}</span>
+                            </div>
+                            ${guide?.now_playing_progress ? `
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${guide.now_playing_progress}%"></div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ` : ''}
                         ${channel.status !== 'online' ? 
                             '<span class="absolute top-2 right-2 text-[10px] bg-red-900/80 text-red-300 px-2 py-0.5 rounded">OFF</span>' : ''}
                     </div>
                     <div class="p-2 flex items-center gap-2">
-                        <img src="${logo}" alt="" class="w-5 h-5 rounded object-cover bg-[#1a1a1a]" 
+                        <img src="${logo}" alt="" class="w-6 h-6 rounded object-cover bg-[#1a1a1a]" 
                              onerror="this.style.display='none'">
-                        <h3 class="text-xs font-medium truncate">${channel.name}</h3>
+                        <h3 class="channel-name font-medium truncate">${channel.name}</h3>
                     </div>
                 </div>
             `;
+        }
+
+        function handleCardMouseEnter(card) {
+            if (mouseMoved) {
+                selectCard(card, 'mouse');
+            }
         }
 
         function renderContent() {
             buildCategories();
             let html = '';
 
-            const categoryKeys = Object.keys(categories);
+            const categoryOrder = ['open', '24h', 'premiere', 'espn', 'sports', 'news', 'entertainment', 'kids', 'movies', 'music', 'documentary', 'religion', 'general', 'adult'];
+            const categoryKeys = categoryOrder.filter(key => categories[key]?.length > 0);
+
             categoryKeys.forEach((key) => {
                 const channels = categories[key];
                 html += `
                     <div class="mb-8 px-4">
-                        <h2 class="text-lg font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
+                        <h2 class="category-title font-semibold mb-3 px-2">${genreLabels[key] || key}</h2>
                         <div class="category-row-wrapper">
                             <div class="category-row px-2 pb-2" data-category="${key}">
                                 ${channels.map((channel, i) => cardTemplate(channel, key, i)).join('')}
@@ -313,7 +618,9 @@
                     row.addEventListener('scroll', () => updateShadows(row));
                 });
                 const firstCard = document.querySelector('.channel-card');
-                if (firstCard && !playerOpen) firstCard.focus();
+                if (firstCard && !playerOpen) {
+                    selectCard(firstCard, 'keyboard');
+                }
             });
         }
 
@@ -352,6 +659,10 @@
             iframe.src = channel.url + (channel.url.includes('?') ? '&' : '?') + 'autoplay=1';
             modalLogo.src = channel.logo || channel.cover;
             modalName.textContent = channel.name;
+            
+            const guide = getGuideInfo(channel.slug);
+            modalNowPlaying.textContent = guide?.now_playing_title || '';
+            
             player.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             
@@ -423,6 +734,7 @@
                 switch(e.key) {
                     case 'Escape':
                     case 'Backspace':
+                    case 'Back':
                         closePlayer();
                         break;
                     case 'ArrowLeft':
@@ -446,64 +758,32 @@
                 if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;
 
                 e.preventDefault();
-                const cards = Array.from(document.querySelectorAll('.channel-card'));
-                if (cards.length === 0) return;
-
-                const focusedIndex = cards.findIndex(card => card === document.activeElement);
-
-                if (focusedIndex === -1) {
-                    cards[0]?.focus();
-                    return;
-                }
-
-                const currentCard = cards[focusedIndex];
-                const currentRow = currentCard.closest('.category-row');
-                const cardsInRow = Array.from(currentRow.children);
-                const currentIndexInRow = cardsInRow.indexOf(currentCard);
-
-                switch(e.key) {
-                    case 'ArrowRight':
-                        if (currentIndexInRow < cardsInRow.length - 1) {
-                            cardsInRow[currentIndexInRow + 1].focus();
-                            cardsInRow[currentIndexInRow + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        if (currentIndexInRow > 0) {
-                            cardsInRow[currentIndexInRow - 1].focus();
-                            cardsInRow[currentIndexInRow - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                        break;
-                    case 'ArrowDown':
-                        const nextRow = currentRow.closest('.mb-8')?.nextElementSibling?.querySelector('.category-row');
-                        if (nextRow) {
-                            const nextCards = nextRow.children;
-                            const targetIndex = Math.min(currentIndexInRow, nextCards.length - 1);
-                            nextCards[targetIndex]?.focus();
-                            nextCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                        break;
-                    case 'ArrowUp':
-                        const prevRow = currentRow.closest('.mb-8')?.previousElementSibling?.querySelector('.category-row');
-                        if (prevRow) {
-                            const prevCards = prevRow.children;
-                            const targetIndex = Math.min(currentIndexInRow, prevCards.length - 1);
-                            prevCards[targetIndex]?.focus();
-                            prevCards[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
-                        break;
-                    case 'Enter':
-                        currentCard.click();
-                        break;
-                }
+                navigateGrid(e.key.replace('Arrow', '').toLowerCase());
             }
         });
 
+        async function loadGuide() {
+            try {
+                const res = await fetch(GUIDE_API);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    guideData = {};
+                    data.data.forEach(channel => {
+                        guideData[channel.id] = channel;
+                    });
+                }
+            } catch {
+                console.log('Não foi possível carregar o guia de programação');
+            }
+        }
+
         async function loadChannels() {
             try {
-                const res = await fetch(API);
+                const res = await fetch(CHANNELS_API);
                 allChannels = await res.json();
+                await loadGuide();
                 renderContent();
+                initTizenKeys();
             } catch {
                 content.innerHTML = `
                     <div class="text-center py-20 text-gray-600">
