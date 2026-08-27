@@ -31,7 +31,7 @@
             color: #e5e5e5;
             overflow: hidden;
             height: 100vh;
-            position: relative;
+            margin: 0;
         }
         .pirate-title {
             font-family: 'Pirata One', cursive;
@@ -49,22 +49,13 @@
             margin-left: 2px;
         }
         header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 40;
             background: rgba(10, 10, 10, 0.7);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
         #mainScroll {
-            position: fixed;
-            top: 60px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: auto;
+            height: 100vh;
+            overflow-y: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
             scroll-behavior: smooth;
@@ -124,18 +115,6 @@
             opacity: 0;
             pointer-events: none;
         }
-        .loading-logo-container {
-            width: 64px;
-            height: 64px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .loading-logo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
         .loading-title {
             font-family: 'Pirata One', cursive;
             font-size: 2.5rem;
@@ -169,7 +148,7 @@
         }
         .guide-time-header {
             display: flex;
-            height: 50px;
+            height: 40px;
             border-bottom: 1px solid #1a1a1a;
             position: sticky;
             top: 0;
@@ -182,7 +161,7 @@
             background: #0a0a0a;
             position: sticky;
             left: 0;
-            z-index: 20;
+            z-index: 25;
             border-right: 1px solid #1a1a1a;
         }
         .guide-time-header-hours {
@@ -217,7 +196,7 @@
             width: 70px;
             position: sticky;
             left: 0;
-            z-index: 10;
+            z-index: 20;
             background: #0a0a0a;
             border-right: 1px solid #1a1a1a;
         }
@@ -273,7 +252,7 @@
         .guide-programme-block:hover,
         .guide-programme-block.keyboard-hover {
             background: #2a2a2a;
-            z-index: 15;
+            z-index: 5;
         }
         .guide-programme-now {
             background: #1e1e1e;
@@ -331,21 +310,17 @@
 <body>
 
     <div id="loadingScreen">
-        <div class="loading-content flex items-center gap-3">
-            <div class="loading-logo-container">
-                <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/logo.png" alt="seadogtv">
-            </div>
+        <div class="loading-content">
             <h1 class="loading-title">seadog<span class="loading-tv-title">tv</span></h1>
         </div>
     </div>
 
-    <header>
-        <div class="max-w-full px-4 py-3">
-            <h1 class="pirate-title">seadog<span class="tv-title">tv</span></h1>
-        </div>
-    </header>
-
     <main id="mainScroll">
+        <header>
+            <div class="max-w-full px-4 py-3">
+                <h1 class="pirate-title">seadog<span class="tv-title">tv</span></h1>
+            </div>
+        </header>
         <div id="content"></div>
     </main>
 
@@ -486,6 +461,8 @@
         }
 
         function showTooltip(element, text) {
+            if (playerOpen) return;
+            
             const rect = element.getBoundingClientRect();
             tooltip.textContent = text;
             tooltip.style.display = 'block';
@@ -550,13 +527,13 @@
                     }
                 }
                 
-                const row = blocks[blockIndex].closest('.guide-programme-row');
-                if (row) {
-                    const mainRect = mainScroll.getBoundingClientRect();
-                    const rowRect = row.getBoundingClientRect();
-                    
-                    if (rowRect.top < mainRect.top || rowRect.bottom > mainRect.bottom) {
-                        mainScroll.scrollTop += rowRect.top - mainRect.top - (mainRect.height / 2) + (rowRect.height / 2);
+                if (source === 'keyboard') {
+                    const row = blocks[blockIndex].closest('.guide-programme-row');
+                    if (row) {
+                        const guideHeader = row.closest('.guide-wrapper').querySelector('.guide-time-header');
+                        const headerHeight = guideHeader ? guideHeader.offsetHeight : 0;
+                        const rowTop = row.offsetTop;
+                        mainScroll.scrollTop = rowTop - headerHeight;
                     }
                 }
             }
@@ -564,8 +541,23 @@
             highlightRow(channelIndex);
         }
 
+        function handleChannelHover(element, channelIndex) {
+            if (usingKeyboard || playerOpen) return;
+            
+            const channel = flatChannels[channelIndex];
+            if (channel) {
+                showTooltip(element, channel.name || '');
+            }
+        }
+
+        function handleChannelLeave() {
+            if (!usingKeyboard) {
+                hideTooltip();
+            }
+        }
+
         function handleBlockHover(element, channelIndex, blockIndex) {
-            if (usingKeyboard) return;
+            if (usingKeyboard || playerOpen) return;
             
             selectBlock(channelIndex, blockIndex, 'mouse');
             
@@ -675,8 +667,8 @@
                 channelListHtml += `
                     <div class="guide-channel-item" 
                          onclick='openPlayerByIndex(${channelIndex})' 
-                         onmouseenter='handleBlockHover(this, ${channelIndex}, 0)'
-                         onmouseleave='handleBlockLeave()'>
+                         onmouseenter='handleChannelHover(this, ${channelIndex})'
+                         onmouseleave='handleChannelLeave()'>
                         <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
                     </div>
                 `;
@@ -774,6 +766,7 @@
             
             selectedChannelIndex = index;
             playerOpen = true;
+            hideTooltip();
 
             iframe.src = channel.url + (channel.url.includes('?') ? '&' : '?') + 'autoplay=1';
             modalLogo.src = channel.logo || channel.cover;
@@ -800,6 +793,7 @@
             iframe.src = '';
             document.body.style.overflow = '';
             playerHeader.classList.remove('hidden-header');
+            hideTooltip();
             if (history.state?.playerOpen) history.back();
         }
 
@@ -810,6 +804,7 @@
                 iframe.src = '';
                 document.body.style.overflow = '';
                 playerHeader.classList.remove('hidden-header');
+                hideTooltip();
             }
         });
 
