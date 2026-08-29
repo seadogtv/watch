@@ -475,9 +475,6 @@
             searchInput.classList.toggle('active');
             if (searchInput.classList.contains('active')) {
                 searchInput.focus();
-            } else {
-                searchInput.value = '';
-                renderGuide();
             }
         });
 
@@ -502,8 +499,6 @@
         document.addEventListener('click', (e) => {
             if (!searchContainer.contains(e.target) && searchInput.classList.contains('active')) {
                 searchInput.classList.remove('active');
-                searchInput.value = '';
-                renderGuide();
             }
         });
 
