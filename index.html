@@ -45,6 +45,10 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
+        .header-container {
+            display: flex;
+            align-items: center;
+        }
         #mainScroll {
             height: 100vh;
             overflow: auto;
@@ -107,12 +111,16 @@
             opacity: 0;
             pointer-events: none;
         }
-        .loading-title {
-            font-family: 'Pirata One', cursive;
-            font-size: 2.5rem;
-            letter-spacing: 0.02em;
-            color: #ffffff;
-            text-transform: lowercase;
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-logo-img {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
         }
         .loading-content {
             animation: pulse 2s ease-in-out infinite;
@@ -365,14 +373,16 @@
 
     <div id="loadingScreen">
         <div class="loading-content">
-            <h1 class="loading-title">seadog</h1>
+            <img src="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/icon-original.png" alt="seadog logo" class="loading-logo-img">
         </div>
     </div>
 
     <main id="mainScroll">
         <header>
             <div class="max-w-full px-4 py-3">
-                <h1 class="pirate-title">seadog</h1>
+                <div class="header-container">
+                    <h1 class="pirate-title">seadog</h1>
+                </div>
             </div>
         </header>
         <div id="content"></div>
@@ -916,6 +926,7 @@
                     const duration = blockEnd - blockStart;
                     const width = Math.round((duration / 3600) * HOUR_WIDTH);
                     
+                    // Verifica se o programa atual contém o horário "agora"
                     const isNow = blockStart <= nowTimestamp && blockEnd > nowTimestamp;
                     const isFuture = blockStart > nowTimestamp;
                     
