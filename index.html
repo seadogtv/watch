@@ -55,7 +55,7 @@
         }
         #mainScroll {
             height: 100vh;
-            overflow-y: auto;
+            overflow: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
             scroll-behavior: smooth;
@@ -262,7 +262,7 @@
             background: #2a2a2a;
         }
         .guide-programme-future {
-            cursor: default;
+            cursor: pointer;
         }
         .guide-programme-empty {
             background: #0a0a0a;
@@ -287,12 +287,12 @@
             bottom: 0;
             width: 1px;
             background: #ff4444;
-            z-index: 25;
+            z-index: 5;
             pointer-events: none;
         }
         .programme-tooltip {
             position: fixed;
-            z-index: 100;
+            z-index: 90;
             background: #1a1a1a;
             border: 1px solid #333;
             border-radius: 6px;
@@ -304,6 +304,76 @@
             max-width: 300px;
             word-wrap: break-word;
             display: none;
+        }
+        .schedule-popup {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 1.25rem 1.5rem;
+            min-width: 340px;
+            max-width: 420px;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+        }
+        .schedule-popup.show {
+            display: block;
+            animation: popupIn 0.2s ease-out;
+        }
+        @keyframes popupIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        .schedule-popup-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.375rem;
+        }
+        .schedule-popup-subtitle {
+            font-size: 0.75rem;
+            color: #777;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        .schedule-popup-btn {
+            width: 100%;
+            padding: 0.625rem;
+            background: #ffffff;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 3px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s;
+            letter-spacing: 0.01em;
+        }
+        .schedule-popup-btn:hover {
+            background: #e0e0e0;
+        }
+        .schedule-popup-progress {
+            height: 2px;
+            background: #1a1a1a;
+            border-radius: 1px;
+            margin-top: 0.75rem;
+            overflow: hidden;
+        }
+        .schedule-popup-progress-fill {
+            height: 100%;
+            background: #555;
+            width: 100%;
+            transition: width 0.1s linear;
         }
     </style>
 </head>
@@ -325,6 +395,15 @@
     </main>
 
     <div id="tooltip" class="programme-tooltip"></div>
+
+    <div id="schedulePopup" class="schedule-popup">
+        <div class="schedule-popup-title" id="schedulePopupTitle">Agendar programação?</div>
+        <div class="schedule-popup-subtitle" id="schedulePopupSubtitle"></div>
+        <button class="schedule-popup-btn" id="schedulePopupBtn">Agendar</button>
+        <div class="schedule-popup-progress">
+            <div class="schedule-popup-progress-fill" id="schedulePopupProgress"></div>
+        </div>
+    </div>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
         <div class="relative h-full">
@@ -362,6 +441,11 @@
         const playerHeader = document.getElementById('playerHeader');
         const loadingScreen = document.getElementById('loadingScreen');
         const tooltip = document.getElementById('tooltip');
+        const schedulePopup = document.getElementById('schedulePopup');
+        const schedulePopupTitle = document.getElementById('schedulePopupTitle');
+        const schedulePopupSubtitle = document.getElementById('schedulePopupSubtitle');
+        const schedulePopupBtn = document.getElementById('schedulePopupBtn');
+        const schedulePopupProgress = document.getElementById('schedulePopupProgress');
 
         let allChannels = [];
         let guideData = {};
@@ -378,6 +462,9 @@
         let selectedBlockIndex = 0;
         let usingKeyboard = false;
         let blocksData = [];
+        let schedules = [];
+        let popupTimeout = null;
+        let popupProgressInterval = null;
 
         const genreLabels = {
             'general': 'Geral',
@@ -482,6 +569,129 @@
         function hideTooltip() {
             tooltip.style.display = 'none';
         }
+
+        function showSchedulePopup(title, subtitle, actionText, actionCallback) {
+            schedulePopupTitle.textContent = title;
+            schedulePopupSubtitle.textContent = subtitle;
+            schedulePopupBtn.textContent = actionText;
+            schedulePopup.classList.add('show');
+            schedulePopupProgress.style.width = '100%';
+            
+            clearTimeout(popupTimeout);
+            clearInterval(popupProgressInterval);
+            
+            let progress = 100;
+            const totalDuration = 5000;
+            const interval = 50;
+            const decrement = (100 / totalDuration) * interval;
+            
+            popupProgressInterval = setInterval(() => {
+                progress -= decrement;
+                schedulePopupProgress.style.width = progress + '%';
+                if (progress <= 0) {
+                    clearInterval(popupProgressInterval);
+                    hideSchedulePopup();
+                }
+            }, interval);
+            
+            schedulePopupBtn.onclick = () => {
+                clearInterval(popupProgressInterval);
+                hideSchedulePopup();
+                actionCallback();
+            };
+            
+            popupTimeout = setTimeout(() => {
+                hideSchedulePopup();
+            }, totalDuration);
+        }
+
+        function hideSchedulePopup() {
+            schedulePopup.classList.remove('show');
+            clearTimeout(popupTimeout);
+            clearInterval(popupProgressInterval);
+        }
+
+        function handleScheduleClick(channelIndex, blockIndex) {
+            const blockData = blocksData.find(b => b.channelIndex === channelIndex && b.blockIndex === blockIndex);
+            if (!blockData) return;
+            
+            if (blockData.isNow) {
+                openPlayerByIndex(channelIndex);
+                return;
+            }
+            
+            const channel = flatChannels[channelIndex];
+            const guide = getGuideInfo(channel.slug);
+            if (!guide) return;
+            
+            const prog = guide.now_playing_next_programmes?.[blockIndex - 1];
+            if (!prog) return;
+            
+            const existingSchedule = schedules.find(s => 
+                s.start_timestamp === prog.start_timestamp && 
+                s.end_timestamp === prog.end_timestamp &&
+                s.channelIndex !== channelIndex
+            );
+            
+            if (existingSchedule) {
+                showSchedulePopup(
+                    'Substituir agendamento?',
+                    `${prog.title} às ${formatTime(prog.start_timestamp)}`,
+                    'Substituir',
+                    () => {
+                        schedules = schedules.filter(s => s !== existingSchedule);
+                        schedules.push({
+                            channelIndex,
+                            title: prog.title,
+                            start_timestamp: prog.start_timestamp,
+                            end_timestamp: prog.end_timestamp
+                        });
+                        checkSchedules();
+                    }
+                );
+            } else {
+                showSchedulePopup(
+                    'Agendar programação?',
+                    `${prog.title} às ${formatTime(prog.start_timestamp)}`,
+                    'Agendar',
+                    () => {
+                        schedules.push({
+                            channelIndex,
+                            title: prog.title,
+                            start_timestamp: prog.start_timestamp,
+                            end_timestamp: prog.end_timestamp
+                        });
+                        checkSchedules();
+                    }
+                );
+            }
+        }
+
+        function checkSchedules() {
+            const now = Math.floor(Date.now() / 1000);
+            
+            schedules.forEach((schedule, index) => {
+                const timeUntilStart = schedule.start_timestamp - now;
+                
+                if (timeUntilStart <= 300 && timeUntilStart > 0 && !schedule.notified) {
+                    schedule.notified = true;
+                    const channel = flatChannels[schedule.channelIndex];
+                    showSchedulePopup(
+                        'Programação começando',
+                        `${schedule.title} em ${channel?.name || ''}`,
+                        'Assistir agora',
+                        () => {
+                            openPlayerByIndex(schedule.channelIndex);
+                            schedules = schedules.filter(s => s !== schedule);
+                        }
+                    );
+                } else if (timeUntilStart <= -300) {
+                    schedules.splice(index, 1);
+                }
+            });
+        }
+
+        setInterval(checkSchedules, 1000);
 
         function highlightRow(channelIndex) {
             document.querySelectorAll('.guide-channel-item').forEach((el, i) => {
@@ -594,13 +804,34 @@
                 selectedBlockIndex = 0;
             } else if (direction === 'left') {
                 const blocks = document.querySelectorAll(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block`);
-                selectedBlockIndex = (selectedBlockIndex - 1 + blocks.length) % blocks.length;
+                if (selectedBlockIndex > 0) {
+                    selectedBlockIndex--;
+                } else {
+                    selectedBlockIndex = blocks.length - 1;
+                }
             } else if (direction === 'right') {
                 const blocks = document.querySelectorAll(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block`);
-                selectedBlockIndex = (selectedBlockIndex + 1) % blocks.length;
+                if (selectedBlockIndex < blocks.length - 1) {
+                    selectedBlockIndex++;
+                } else {
+                    selectedBlockIndex = 0;
+                }
             }
             
             selectBlock(selectedChannelIndex, selectedBlockIndex, 'keyboard');
+            
+            // Scroll horizontal para o bloco selecionado
+            if (direction === 'left' || direction === 'right') {
+                const block = document.querySelector(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block:nth-child(${selectedBlockIndex + 1})`);
+                if (block) {
+                    const mainRect = mainScroll.getBoundingClientRect();
+                    const blockRect = block.getBoundingClientRect();
+                    
+                    if (blockRect.left < mainRect.left || blockRect.right > mainRect.right) {
+                        mainScroll.scrollLeft += blockRect.left - mainRect.left - 100;
+                    }
+                }
+            }
         }
 
         function renderGuide() {
@@ -702,14 +933,20 @@
                     const duration = blockEnd - blockStart;
                     const width = Math.round((duration / 3600) * HOUR_WIDTH);
                     
-                    const isNow = prog.isNow || (blockStart <= nowTimestamp && blockEnd > nowTimestamp);
+                    const isNow = blockStart <= nowTimestamp && blockEnd > nowTimestamp;
                     const isFuture = blockStart > nowTimestamp;
                     
-                    const clickHandler = isNow ? `onclick='openPlayerByIndex(${channelIndex})'` : '';
+                    const clickHandler = isNow 
+                        ? `onclick='openPlayerByIndex(${channelIndex})'` 
+                        : isFuture 
+                            ? `onclick='handleScheduleClick(${channelIndex}, ${blockIndex})'` 
+                            : '';
+                    
                     const futureClass = isFuture ? 'guide-programme-future' : '';
+                    const nowClass = isNow ? 'guide-programme-now' : '';
                     
                     rowHtml += `
-                        <div class="guide-programme-block ${isNow ? 'guide-programme-now' : ''} ${futureClass}" 
+                        <div class="guide-programme-block ${nowClass} ${futureClass}" 
                              style="width: ${width}px; min-width: ${width}px;"
                              ${clickHandler}
                              onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
@@ -753,7 +990,7 @@
             
             const nowLine = document.getElementById('nowLine');
             if (nowLine) {
-                nowLine.style.left = nowPosition + 'px';
+                nowLine.style.left = (70 + nowPosition) + 'px';
             }
             
             selectedChannelIndex = 0;
@@ -833,6 +1070,14 @@
         });
 
         document.addEventListener('keydown', (e) => {
+            if (schedulePopup.classList.contains('show')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    schedulePopupBtn.click();
+                }
+                return;
+            }
+            
             if (playerOpen) {
                 showPlayerHeader();
                 switch(e.key) {
@@ -869,6 +1114,8 @@
                         const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
                         if (blockData && blockData.isNow) {
                             openPlayerByIndex(selectedChannelIndex);
+                        } else if (blockData) {
+                            handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
                         }
                     }
                 } else {
