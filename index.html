@@ -32,6 +32,8 @@
             overflow: hidden;
             height: 100vh;
             margin: 0;
+            display: flex;
+            flex-direction: column;
         }
         .pirate-title {
             font-family: 'Pirata One', cursive;
@@ -42,13 +44,55 @@
         }
         header {
             background: #0a0a0a;
+            flex-shrink: 0;
+            z-index: 40;
         }
         .header-container {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .search-icon {
+            cursor: pointer;
+            color: #666;
+            font-size: 1rem;
+            flex-shrink: 0;
+            transition: color 0.2s;
+        }
+        .search-icon:hover {
+            color: #ffffff;
+        }
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 0.875rem;
+            width: 0;
+            opacity: 0;
+            transition: width 0.3s ease, opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .search-input.active {
+            width: 200px;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .search-input::placeholder {
+            color: #666;
         }
         #mainScroll {
-            height: 100vh;
+            flex: 1;
             overflow: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -138,7 +182,7 @@
         }
         .guide-time-header {
             display: flex;
-            height: 40px;
+            height: 32px;
             border-bottom: 1px solid #1a1a1a;
             position: sticky;
             top: 0;
@@ -169,14 +213,6 @@
             color: #666;
             border-right: 1px solid #1a1a1a;
             position: relative;
-        }
-        .guide-hour-tick {
-            position: absolute;
-            bottom: 0;
-            width: 1px;
-            background: #2a2a2a;
-            pointer-events: none;
-            height: 4px;
         }
         .guide-body {
             display: flex;
@@ -245,7 +281,7 @@
             z-index: 5;
         }
         .guide-programme-now {
-            background: #1e1e1e;
+            background: #111;
         }
         .guide-programme-now:hover,
         .guide-programme-now.keyboard-hover {
@@ -256,7 +292,11 @@
         }
         .guide-programme-empty {
             background: #0a0a0a;
-            cursor: default;
+            cursor: pointer;
+        }
+        .guide-programme-empty:hover,
+        .guide-programme-empty.keyboard-hover {
+            background: #2a2a2a;
         }
         .guide-programme-title {
             font-size: 0.75rem;
@@ -375,14 +415,19 @@
         </div>
     </div>
 
-    <main id="mainScroll">
-        <header>
-            <div class="max-w-full px-4 py-3">
-                <div class="header-container">
-                    <h1 class="pirate-title">seadog</h1>
-                </div>
+    <header>
+        <div class="header-container">
+            <div class="header-left">
+                <h1 class="pirate-title">seadog</h1>
             </div>
-        </header>
+            <div class="search-container" id="searchContainer">
+                <i class="fa-solid fa-magnifying-glass search-icon" id="searchIcon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por canal ou programa">
+            </div>
+        </div>
+    </header>
+
+    <main id="mainScroll">
         <div id="content"></div>
     </main>
 
@@ -419,6 +464,116 @@
         document.addEventListener('contextmenu', (e) => e.preventDefault());
         document.addEventListener('dragstart', (e) => {
             if (e.target.tagName === 'IMG') e.preventDefault();
+        });
+
+        const searchIcon = document.getElementById('searchIcon');
+        const searchInput = document.getElementById('searchInput');
+        const searchContainer = document.getElementById('searchContainer');
+
+        searchIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchInput.classList.toggle('active');
+            if (searchInput.classList.contains('active')) {
+                searchInput.focus();
+            } else {
+                searchInput.value = '';
+                renderGuide();
+            }
+        });
+
+        searchInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (flatChannels.length > 0) {
+                    selectedChannelIndex = 0;
+                    selectedBlockIndex = 0;
+                    highlightRow(0);
+                    searchInput.blur();
+                    searchInput.classList.remove('active');
+                }
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!searchContainer.contains(e.target) && searchInput.classList.contains('active')) {
+                searchInput.classList.remove('active');
+                searchInput.value = '';
+                renderGuide();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                searchInput.classList.add('active');
+                searchInput.focus();
+                return;
+            }
+
+            if (schedulePopup.classList.contains('show')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    schedulePopupBtn.click();
+                }
+                return;
+            }
+            
+            if (playerOpen) {
+                showPlayerHeader();
+                switch(e.key) {
+                    case 'Escape':
+                    case 'Backspace':
+                        closePlayer();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        navigatePlayer('left');
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        navigatePlayer('right');
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        navigatePlayer('up');
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        navigatePlayer('down');
+                        break;
+                }
+            } else {
+                if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;
+                
+                e.preventDefault();
+                
+                if (e.key === 'Enter') {
+                    if (searchInput.classList.contains('active')) {
+                        return;
+                    }
+                    
+                    if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
+                        const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
+                        if (blockData && (blockData.isNow || blockData.isEmpty)) {
+                            openPlayerByIndex(selectedChannelIndex);
+                        } else if (blockData) {
+                            handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
+                        }
+                    }
+                } else {
+                    const direction = e.key.replace('Arrow', '').toLowerCase();
+                    navigateGrid(direction);
+                }
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            renderGuide();
         });
 
         const CHANNELS_API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
@@ -833,6 +988,8 @@
             
             buildCategories();
             
+            const query = searchInput.value.toLowerCase().trim();
+            
             const now = new Date();
             const currentHour = now.getHours();
             const startHour = currentHour;
@@ -843,7 +1000,32 @@
             
             flatChannels = [];
             categoryKeys.forEach(key => {
-                flatChannels.push(...categories[key]);
+                categories[key].forEach(channel => {
+                    if (!query) {
+                        flatChannels.push(channel);
+                    } else {
+                        const channelName = (channel.name || '').toLowerCase();
+                        const guide = getGuideInfo(channel.slug);
+                        let programmeTitles = '';
+                        
+                        if (guide) {
+                            if (guide.now_playing_title) {
+                                programmeTitles += guide.now_playing_title.toLowerCase() + ' ';
+                            }
+                            if (guide.now_playing_next_programmes) {
+                                guide.now_playing_next_programmes.forEach(prog => {
+                                    if (prog.title) {
+                                        programmeTitles += prog.title.toLowerCase() + ' ';
+                                    }
+                                });
+                            }
+                        }
+                        
+                        if (channelName.includes(query) || programmeTitles.includes(query)) {
+                            flatChannels.push(channel);
+                        }
+                    }
+                });
             });
             
             if (flatChannels.length === 0) {
@@ -856,16 +1038,9 @@
                 const hour = (startHour + i) % 24;
                 const hourStr = String(hour).padStart(2, '0') + ':00';
                 
-                let ticksHtml = '';
-                for (let min = 10; min < 60; min += 10) {
-                    const tickLeft = Math.round((min / 60) * HOUR_WIDTH);
-                    ticksHtml += `<div class="guide-hour-tick" style="left: ${tickLeft}px;"></div>`;
-                }
-                
                 hoursHtml += `
                     <div class="guide-hour">
                         ${hourStr}
-                        ${ticksHtml}
                     </div>
                 `;
             }
@@ -907,9 +1082,14 @@
                     if (!prog) {
                         const width = Math.round(((guideEndTimestamp - currentTime) / 3600) * HOUR_WIDTH);
                         rowHtml += `
-                            <div class="guide-programme-block guide-programme-empty" style="width: ${width}px; min-width: ${width}px; flex: 1; cursor: default;"></div>
+                            <div class="guide-programme-block guide-programme-empty" 
+                                 style="width: ${width}px; min-width: ${width}px; flex: 1;"
+                                 onclick='openPlayerByIndex(${channelIndex})'
+                                 onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
+                                 onmouseleave='handleBlockLeave()'>
+                            </div>
                         `;
-                        blocksData.push({ channelIndex, blockIndex, isNow: false });
+                        blocksData.push({ channelIndex, blockIndex, isNow: false, isEmpty: true });
                         break;
                     }
                     
@@ -924,7 +1104,6 @@
                     const duration = blockEnd - blockStart;
                     const width = Math.round((duration / 3600) * HOUR_WIDTH);
                     
-                    // Verifica se o programa atual contém o horário "agora"
                     const isNow = blockStart <= nowTimestamp && blockEnd > nowTimestamp;
                     const isFuture = blockStart > nowTimestamp;
                     
@@ -1059,61 +1238,6 @@
 
         document.addEventListener('mousemove', () => {
             usingKeyboard = false;
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (schedulePopup.classList.contains('show')) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    schedulePopupBtn.click();
-                }
-                return;
-            }
-            
-            if (playerOpen) {
-                showPlayerHeader();
-                switch(e.key) {
-                    case 'Escape':
-                    case 'Backspace':
-                        closePlayer();
-                        break;
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        navigatePlayer('left');
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        navigatePlayer('right');
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        navigatePlayer('up');
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        navigatePlayer('down');
-                        break;
-                }
-            } else {
-                if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) return;
-                
-                e.preventDefault();
-                
-                const direction = e.key.replace('Arrow', '').toLowerCase();
-                
-                if (e.key === 'Enter') {
-                    if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
-                        const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
-                        if (blockData && blockData.isNow) {
-                            openPlayerByIndex(selectedChannelIndex);
-                        } else if (blockData) {
-                            handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
-                        }
-                    }
-                } else {
-                    navigateGrid(direction);
-                }
-            }
         });
 
         async function loadGuide() {
