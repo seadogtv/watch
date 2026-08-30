@@ -1155,6 +1155,17 @@
             
             selectedChannelIndex = 0;
             selectedBlockIndex = 0;
+            
+            // Abre o canal diretamente se houver parâmetro na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const channelParam = urlParams.get('c');
+            if (channelParam) {
+                const channelSlug = channelParam.toLowerCase();
+                const channelIndex = flatChannels.findIndex(c => (c.slug || c.name || '').toLowerCase() === channelSlug);
+                if (channelIndex >= 0) {
+                    setTimeout(() => openPlayerByIndex(channelIndex), 500);
+                }
+            }
         }
 
         function openPlayerByIndex(index) {
