@@ -175,6 +175,7 @@
             display: flex;
             min-width: fit-content;
             position: relative;
+            padding: 2px;
         }
         .guide-channels {
             flex-shrink: 0;
@@ -182,59 +183,61 @@
         }
         .guide-time-header {
             display: flex;
-            height: 32px;
-            border-bottom: 1px solid #1a1a1a;
+            height: 40px;
             position: sticky;
             top: 0;
             z-index: 30;
             background: #0a0a0a;
         }
         .guide-time-header-spacer {
-            width: 70px;
+            width: 72px;
             flex-shrink: 0;
             background: #0a0a0a;
             position: sticky;
             left: 0;
             z-index: 25;
-            border-right: 1px solid #1a1a1a;
         }
         .guide-time-header-hours {
             display: flex;
             flex-shrink: 0;
             position: relative;
+            gap: 2px;
         }
         .guide-hour {
-            width: 120px;
+            width: 118px;
             flex-shrink: 0;
             display: flex;
             align-items: flex-end;
             padding: 0 0.5rem 0.25rem;
             font-size: 0.75rem;
             color: #666;
-            border-right: 1px solid #1a1a1a;
             position: relative;
+            height: 32px;
+            margin-top: 4px;
         }
         .guide-body {
             display: flex;
+            margin-top: 2px;
         }
         .guide-channel-list {
             flex-shrink: 0;
-            width: 70px;
+            width: 72px;
             position: sticky;
             left: 0;
             z-index: 20;
             background: #0a0a0a;
-            border-right: 1px solid #1a1a1a;
         }
         .guide-channel-item {
             height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 1px solid #1a1a1a;
+            margin-bottom: 2px;
             padding: 0.25rem;
             cursor: pointer;
             transition: background-color 0.15s;
+            background: #111;
+            margin-right: 2px;
         }
         .guide-channel-item:hover {
             background: #1a1a1a;
@@ -250,25 +253,20 @@
         .guide-programmes {
             flex-shrink: 0;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         .guide-programme-row {
             display: flex;
             height: 56px;
-            border-bottom: 1px solid #1a1a1a;
-            transition: background-color 0.15s;
-        }
-        .guide-programme-row:hover {
-            background: #1a1a1a;
-        }
-        .guide-programme-row.selected {
-            background: #1a1a1a;
+            gap: 2px;
         }
         .guide-programme-block {
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 0 0.5rem;
-            border-right: 1px solid #1a1a1a;
             cursor: pointer;
             position: relative;
             overflow: hidden;
@@ -291,7 +289,7 @@
             cursor: pointer;
         }
         .guide-programme-empty {
-            background: #0a0a0a;
+            background: #111;
             cursor: pointer;
         }
         .guide-programme-empty:hover,
@@ -316,21 +314,20 @@
             top: 0;
             bottom: 0;
             width: 1px;
-            background: #ff4444;
+            background: #ffffff;
             z-index: 5;
             pointer-events: none;
         }
         .programme-tooltip {
             position: fixed;
             z-index: 90;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 6px;
+            background: #0f0f0f;
+            border: none;
             padding: 0.5rem 0.75rem;
             font-size: 0.75rem;
             color: #e5e5e5;
             pointer-events: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
             max-width: 300px;
             word-wrap: break-word;
             display: none;
@@ -342,8 +339,7 @@
             transform: translateX(-50%);
             z-index: 200;
             background: #0f0f0f;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
+            border: none;
             padding: 1.25rem 1.5rem;
             min-width: 340px;
             max-width: 420px;
@@ -382,7 +378,6 @@
             background: #ffffff;
             color: #0a0a0a;
             border: none;
-            border-radius: 3px;
             font-size: 0.8125rem;
             font-weight: 600;
             cursor: pointer;
@@ -395,7 +390,6 @@
         .schedule-popup-progress {
             height: 2px;
             background: #1a1a1a;
-            border-radius: 1px;
             margin-top: 0.75rem;
             overflow: hidden;
         }
