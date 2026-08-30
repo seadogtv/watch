@@ -1186,7 +1186,11 @@
             player.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             showPlayerHeader();
-            history.pushState({ playerOpen: true }, '');
+            
+            // Atualiza a URL com o canal atual
+            const channelSlug = channel.slug || channel.name || '';
+            const newUrl = window.location.pathname + '?c=' + encodeURIComponent(channelSlug.toLowerCase());
+            history.pushState({ playerOpen: true, channel: channelSlug.toLowerCase() }, '', newUrl);
         }
 
         function showPlayerHeader() {
@@ -1202,7 +1206,10 @@
             document.body.style.overflow = '';
             playerHeader.classList.remove('hidden-header');
             hideTooltip();
-            if (history.state?.playerOpen) history.back();
+            
+            // Remove o parâmetro da URL
+            const newUrl = window.location.pathname;
+            history.pushState({ playerOpen: false }, '', newUrl);
         }
 
         window.addEventListener('popstate', () => {
