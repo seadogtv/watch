@@ -622,6 +622,11 @@
             'adult': 'Adulto'
         };
 
+        function getProxiedLogo(logoUrl) {
+            if (!logoUrl) return '';
+            return 'https://disret.disret.workers.dev/?url=' + encodeURIComponent(logoUrl);
+        }
+
         function hideLoadingScreen() {
             const elapsed = Date.now() - loadingStartTime;
             const remaining = Math.max(0, MINIMUM_LOADING_TIME - elapsed);
@@ -1047,7 +1052,7 @@
             const nowTimestamp = Math.floor(Date.now() / 1000);
             
             flatChannels.forEach((channel, channelIndex) => {
-                const logo = channel.logo || channel.cover;
+                const logo = getProxiedLogo(channel.logo || channel.cover);
                 const programmes = getGuideProgrammes(channel);
                 
                 channelListHtml += `
@@ -1177,7 +1182,7 @@
             hideTooltip();
 
             iframe.src = channel.url + (channel.url.includes('?') ? '&' : '?') + 'autoplay=1';
-            modalLogo.src = channel.logo || channel.cover;
+            modalLogo.src = getProxiedLogo(channel.logo || channel.cover);
             modalName.textContent = channel.name;
             
             const guide = getGuideInfo(channel.slug);
