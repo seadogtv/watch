@@ -175,7 +175,7 @@
             display: flex;
             min-width: fit-content;
             position: relative;
-            padding: 2px;
+            padding: 0;
         }
         .guide-channels {
             flex-shrink: 0;
@@ -201,10 +201,9 @@
             display: flex;
             flex-shrink: 0;
             position: relative;
-            gap: 2px;
         }
         .guide-hour {
-            width: 118px;
+            width: 120px;
             flex-shrink: 0;
             display: flex;
             align-items: flex-end;
@@ -214,6 +213,8 @@
             position: relative;
             height: 32px;
             margin-top: 4px;
+            box-sizing: border-box;
+            border-right: 2px solid #0a0a0a;
         }
         .guide-body {
             display: flex;
@@ -238,6 +239,7 @@
             transition: background-color 0.15s;
             background: #111;
             margin-right: 2px;
+            box-sizing: border-box;
         }
         .guide-channel-item:hover {
             background: #1a1a1a;
@@ -260,7 +262,6 @@
         .guide-programme-row {
             display: flex;
             height: 56px;
-            gap: 2px;
         }
         .guide-programme-block {
             display: flex;
@@ -272,11 +273,15 @@
             overflow: hidden;
             background: #111;
             transition: background-color 0.15s;
+            z-index: 1;
+            box-sizing: border-box;
+            border-right: 2px solid #0a0a0a;
+            flex-shrink: 0;
         }
         .guide-programme-block:hover,
         .guide-programme-block.keyboard-hover {
             background: #2a2a2a;
-            z-index: 5;
+            z-index: 1;
         }
         .guide-programme-now {
             background: #111;
@@ -315,7 +320,7 @@
             bottom: 0;
             width: 1px;
             background: #ffffff;
-            z-index: 5;
+            z-index: 10;
             pointer-events: none;
         }
         .programme-tooltip {
@@ -607,10 +612,7 @@
             '24h': 'Em looping',
             'movies': 'Filmes',
             'series': 'Séries',
-            'telecine': 'Canais Telecine',
-            'hbo': 'Canais HBO',
             'sports': 'Esportes',
-            'premiere': 'Canais Premiere',
             'espn': 'Canais ESPN',
             'kids': 'Infantil',
             'music': 'Música',
@@ -989,7 +991,7 @@
             const startHour = currentHour;
             const totalHours = 24;
             
-            const categoryOrder = ['general', '24h', 'movies', 'series', 'telecine', 'hbo', 'sports', 'premiere', 'espn', 'kids', 'music', 'documentary', 'entertainment', 'variety', 'news', 'religion', 'adult'];
+            const categoryOrder = ['general', '24h', 'movies', 'series', 'sports', 'espn', 'kids', 'music', 'documentary', 'entertainment', 'variety', 'news', 'religion', 'adult'];
             const categoryKeys = categoryOrder.filter(key => categories[key]?.length > 0);
             
             flatChannels = [];
@@ -1077,7 +1079,7 @@
                         const width = Math.round(((guideEndTimestamp - currentTime) / 3600) * HOUR_WIDTH);
                         rowHtml += `
                             <div class="guide-programme-block guide-programme-empty" 
-                                 style="width: ${width}px; min-width: ${width}px; flex: 1;"
+                                 style="width: ${width}px; min-width: ${width}px;"
                                  onclick='openPlayerByIndex(${channelIndex})'
                                  onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
                                  onmouseleave='handleBlockLeave()'>
@@ -1087,8 +1089,17 @@
                         break;
                     }
                     
-                    const blockStart = Math.max(prog.start_timestamp || currentTime, currentTime);
-                    const blockEnd = Math.min(prog.end_timestamp || blockStart + 3600, guideEndTimestamp);
+                    let blockStart;
+                    let blockEnd;
+                    
+                    // Correção: primeiro bloco (programa atual) começa no início da grade (hora cheia)
+                    if (programmeIndex === 0 && prog.isNow) {
+                        blockStart = currentTime;
+                        blockEnd = Math.min(prog.end_timestamp || guideEndTimestamp, guideEndTimestamp);
+                    } else {
+                        blockStart = Math.max(prog.start_timestamp || currentTime, currentTime);
+                        blockEnd = Math.min(prog.end_timestamp || blockStart + 3600, guideEndTimestamp);
+                    }
                     
                     if (blockEnd <= blockStart) {
                         programmeIndex++;
