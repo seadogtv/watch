@@ -680,9 +680,6 @@
         let schedules = [];
         let popupTimeout = null;
         let popupProgressInterval = null;
-        let lastGuideUpdateHour = null;
-        let nowLineUpdateInterval = null;
-        let guideUpdateInterval = null;
         let tooltipTimeout = null;
 
         const genreLabels = {
@@ -1341,28 +1338,6 @@
             nowLine.style.left = nowPosition + 'px';
         }
 
-        function checkForHourChange() {
-            const now = new Date();
-            const currentHour = now.getHours();
-            
-            if (lastGuideUpdateHour === null) {
-                lastGuideUpdateHour = currentHour;
-            } else if (currentHour !== lastGuideUpdateHour) {
-                lastGuideUpdateHour = currentHour;
-                refreshGuideData();
-            }
-        }
-
-        async function refreshGuideData() {
-            try {
-                await loadGuide();
-                renderGuide();
-                console.log('Guia atualizado às', new Date().toLocaleTimeString('pt-BR'));
-            } catch (error) {
-                console.error('Erro ao atualizar guia:', error);
-            }
-        }
-
         function openPlayerByIndex(index) {
             const channel = flatChannels[index];
             if (!channel) return;
@@ -1391,7 +1366,7 @@
         function showPlayerHeader() {
             playerHeader.classList.remove('hidden-header');
             clearTimeout(headerTimeout);
-            headerTimeout = setTimeout(() => playerHeader.classList.add('hidden-header'), 5000);
+            headerTimeout = setTimeout(() => playerHeader.classList.add('hidden-header'), 10000);
         }
 
         function closePlayer() {
@@ -1495,9 +1470,6 @@
                 await loadGuide();
                 renderGuide();
                 hideLoadingScreen();
-                
-                // Inicializa os intervalos de atualização
-                initializeAutoUpdates();
             } catch (error) {
                 console.error('Erro:', error);
                 hideLoadingScreen();
@@ -1513,27 +1485,8 @@
             }
         }
 
-        function initializeAutoUpdates() {
-            // Atualiza a linha do tempo a cada segundo
-            nowLineUpdateInterval = setInterval(() => {
-                updateNowLine();
-            }, 1000);
-            
-            // Verifica mudança de hora a cada 30 segundos
-            guideUpdateInterval = setInterval(() => {
-                checkForHourChange();
-            }, 30000);
-            
-            // Atualiza a programação completa a cada 5 minutos
-            setInterval(() => {
-                refreshGuideData();
-            }, 300000);
-        }
-
         // Limpa os intervalos quando a página for fechada
         window.addEventListener('beforeunload', () => {
-            if (nowLineUpdateInterval) clearInterval(nowLineUpdateInterval);
-            if (guideUpdateInterval) clearInterval(guideUpdateInterval);
             if (tooltipTimeout) clearTimeout(tooltipTimeout);
         });
 
