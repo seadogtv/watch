@@ -934,6 +934,11 @@
 
         let currentUser = null
         let schedules = []
+        let touchStartX = 0
+        let touchStartY = 0
+        let touchEndX = 0
+        let touchEndY = 0
+        let isSwiping = false
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
@@ -2273,9 +2278,57 @@
             if (playerOpen) showPlayerHeader();
         });
 
-        player.addEventListener('touchstart', () => {
-            if (playerOpen) showPlayerHeader();
-        });
+        player.addEventListener('touchstart', (e) => {
+            if (playerOpen) {
+                showPlayerHeader()
+                
+                touchStartX = e.touches[0].clientX
+                touchStartY = e.touches[0].clientY
+                isSwiping = true
+            }
+        }, { passive: true });
+
+        player.addEventListener('touchmove', (e) => {
+            if (!playerOpen || !isSwiping) return
+            
+            touchEndX = e.touches[0].clientX
+            touchEndY = e.touches[0].clientY
+        }, { passive: true });
+
+        player.addEventListener('touchend', () => {
+            if (!playerOpen || !isSwiping) return
+            
+            const deltaX = touchEndX - touchStartX
+            const deltaY = touchEndY - touchStartY
+            
+            const minSwipeDistance = 50
+            
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (Math.abs(deltaX) > minSwipeDistance) {
+                    if (deltaX > 0) {
+                        navigatePlayer('left')
+                    } else {
+                        navigatePlayer('right')
+                    }
+                }
+            } else {
+                if (Math.abs(deltaY) > minSwipeDistance) {
+                    if (deltaY > 0) {
+                        navigatePlayer('up')
+                    } else {
+                        navigatePlayer('down')
+                    }
+                }
+            }
+            
+            isSwiping = false
+            touchStartX = 0
+            touchStartY = 0
+            touchEndX = 0
+            touchEndY = 0
+            
+            showPlayerHeader()
+        }, { passive: true });
 
         document.addEventListener('mousemove', () => {
             usingKeyboard = false;
