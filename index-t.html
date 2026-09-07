@@ -606,6 +606,29 @@
         .premium-icon-btn:hover {
             color: #ffffff;
         }
+        .premium-tag {
+            display: inline-block;
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-left: 0.375rem;
+            vertical-align: middle;
+        }
+        .premium-tag.free {
+            background: #1a3a1a;
+            color: #4caf50;
+        }
+        .premium-tag.premium {
+            background: #1a2a3a;
+            color: #2196f3;
+        }
+        .premium-tag.lifetime {
+            background: #3a3a1a;
+            color: #ffc107;
+        }
         .profile-popup {
             position: fixed;
             z-index: 250;
@@ -681,26 +704,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        .profile-redeem-btn {
-            width: 100%;
-            padding: 0.625rem;
-            background: transparent;
-            color: #e5e5e5;
-            border: 1px solid #444;
-            cursor: pointer;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            transition: background-color 0.15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            letter-spacing: 0.01em;
-            margin-bottom: 0.5rem;
-        }
-        .profile-redeem-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
         }
         .profile-logout-btn {
             width: 100%;
@@ -987,6 +990,10 @@
         }
 
         function showGiftCardModal() {
+            if (!currentUser) {
+                showLoginModal()
+                return
+            }
             hideProfilePopup()
             document.getElementById('giftcardModal').classList.add('show')
             document.body.style.overflow = 'hidden'
@@ -1047,13 +1054,14 @@
                         showGiftCardMessage(result.message, 'success')
                     }
                     document.getElementById('giftcardInput').value = ''
+                    updateUserInterface()
                 } else {
                     showGiftCardMessage(result.message, 'error')
                 }
             }
         }
 
-        function toggleProfilePopup() {
+        async function toggleProfilePopup() {
             const popup = document.getElementById('profilePopup')
             
             if (popup.classList.contains('show')) {
@@ -1071,20 +1079,49 @@
                 avatarHtml = `<div class="profile-avatar-fallback">${displayName[0].toUpperCase()}</div>`
             }
             
+            let premiumTag = ''
+            let premiumDuration = ''
+            
+            const { data: subscription, error: subError } = await supabaseClient
+                .from('premium_subscriptions')
+                .select('is_lifetime, expires_at')
+                .eq('user_id', currentUser.id)
+                .single()
+            
+            if (subscription && subscription.is_lifetime) {
+                premiumTag = '<span class="premium-tag lifetime">Vitalício</span>'
+                premiumDuration = 'Duração de premium: vitalício'
+            } else if (subscription && subscription.expires_at) {
+                const expiryDate = new Date(subscription.expires_at)
+                const now = new Date()
+                
+                if (expiryDate > now) {
+                    const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
+                    premiumTag = '<span class="premium-tag premium">Premium</span>'
+                    premiumDuration = `Duração de premium: ${daysRemaining} dias`
+                } else {
+                    premiumTag = '<span class="premium-tag free">Gratuito</span>'
+                    premiumDuration = 'Duração de premium: expirado'
+                }
+            } else {
+                premiumTag = '<span class="premium-tag free">Gratuito</span>'
+                premiumDuration = 'Duração de premium: não possui'
+            }
+            
             popup.innerHTML = `
                 <div class="profile-info">
                     <div class="profile-avatar">
                         ${avatarHtml}
                     </div>
                     <div class="profile-details">
-                        <div class="profile-name">${displayName}</div>
+                        <div class="profile-name">
+                            ${displayName}
+                            ${premiumTag}
+                        </div>
                         <div class="profile-email">${currentUser.email}</div>
+                        <div class="profile-email" style="margin-top: 0.25rem;">${premiumDuration}</div>
                     </div>
                 </div>
-                <button class="profile-redeem-btn" onclick="showGiftCardModal()">
-                    <i class="fa-solid fa-gem"></i>
-                    Resgatar Gift Card
-                </button>
                 <button class="profile-logout-btn" onclick="handleLogout()">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Sair da conta
@@ -1115,13 +1152,6 @@
             if (existingBadge) existingBadge.remove()
             if (existingIcon) existingIcon.remove()
             if (existingPremiumIcon) existingPremiumIcon.remove()
-            
-            const premiumIcon = document.createElement('div')
-            premiumIcon.className = 'premium-icon-btn'
-            premiumIcon.onclick = showGiftCardModal
-            premiumIcon.title = 'Resgatar Gift Card'
-            premiumIcon.innerHTML = '<i class="fa-solid fa-gem"></i>'
-            searchContainer.appendChild(premiumIcon)
             
             if (currentUser) {
                 const userBadge = document.createElement('div')
@@ -1161,6 +1191,41 @@
                 loginIcon.innerHTML = '<i class="fa-solid fa-user"></i>'
                 
                 searchContainer.appendChild(loginIcon)
+            }
+            
+            checkPremiumStatus()
+        }
+
+        async function checkPremiumStatus() {
+            if (!currentUser) {
+                return
+            }
+            
+            const { data: subscription, error } = await supabaseClient
+                .from('premium_subscriptions')
+                .select('is_lifetime, expires_at')
+                .eq('user_id', currentUser.id)
+                .single()
+            
+            if (subscription) {
+                const isActive = subscription.is_lifetime || 
+                    (subscription.expires_at && new Date(subscription.expires_at) > new Date())
+                
+                if (isActive) {
+                    return
+                }
+            }
+            
+            const premiumIconBtn = document.createElement('div')
+            premiumIconBtn.className = 'premium-icon-btn'
+            premiumIconBtn.onclick = showGiftCardModal
+            premiumIconBtn.title = 'Resgatar Gift Card'
+            premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
+            
+            const searchContainer = document.getElementById('searchContainer')
+            const userBadge = document.querySelector('.user-badge')
+            if (userBadge) {
+                searchContainer.insertBefore(premiumIconBtn, userBadge)
             }
         }
 
