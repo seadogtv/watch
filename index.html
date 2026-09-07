@@ -111,7 +111,7 @@
             background: #0f0f0f;
             pointer-events: none;
             transition: opacity 0.3s, transform 0.3s;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
         }
         .player-header.hidden-header {
             opacity: 0;
@@ -359,7 +359,7 @@
             font-size: 0.75rem;
             color: #e5e5e5;
             pointer-events: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             max-width: 320px;
             word-wrap: break-word;
             display: none;
@@ -390,6 +390,16 @@
             font-size: 0.65rem;
             white-space: nowrap;
         }
+        .schedule-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 199;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        .schedule-overlay.show {
+            display: block;
+        }
         .schedule-popup {
             position: fixed;
             bottom: 2rem;
@@ -402,7 +412,7 @@
             min-width: 340px;
             max-width: 420px;
             display: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
         .schedule-popup.show {
             display: block;
@@ -467,6 +477,7 @@
             display: none;
             align-items: center;
             justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
         }
         .login-modal.show {
             display: flex;
@@ -488,7 +499,7 @@
             padding: 2rem;
             width: 90%;
             max-width: 360px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
         .login-box h2 {
@@ -592,7 +603,7 @@
             border: none;
             padding: 1rem;
             min-width: 240px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             display: none;
             animation: profileIn 0.15s ease-out;
         }
@@ -706,6 +717,8 @@
     </main>
 
     <div id="tooltip" class="programme-tooltip"></div>
+
+    <div id="scheduleOverlay" class="schedule-overlay"></div>
 
     <div id="schedulePopup" class="schedule-popup">
         <div class="schedule-popup-title" id="schedulePopupTitle">Agendar programação?</div>
@@ -964,15 +977,17 @@
             }
         }
 
-        // Fechar modal com ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (document.getElementById('loginModal').classList.contains('show')) {
-                    closeLoginModal()
-                }
-                hideProfilePopup()
+        // Fechar modal de login quando clicar fora
+        document.getElementById('loginModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('loginModal')) {
+                closeLoginModal()
             }
         })
+
+        // Fechar agendamento ao clicar no overlay
+        document.getElementById('scheduleOverlay').addEventListener('click', () => {
+            hideSchedulePopup();
+        });
 
         // Fechar popup de perfil quando clicar fora
         document.addEventListener('click', (e) => {
@@ -983,6 +998,17 @@
                 !popup.contains(e.target) && 
                 badge && !badge.contains(e.target)) {
                 hideProfilePopup()
+            }
+        })
+
+        // Fechar com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('loginModal').classList.contains('show')) {
+                    closeLoginModal()
+                }
+                hideProfilePopup()
+                hideSchedulePopup()
             }
         })
 
@@ -1298,6 +1324,7 @@
             schedulePopupSubtitle.textContent = subtitle;
             schedulePopupBtn.textContent = actionText;
             schedulePopup.classList.add('show');
+            document.getElementById('scheduleOverlay').classList.add('show');
             schedulePopupProgress.style.width = '100%';
             
             clearTimeout(popupTimeout);
@@ -1330,6 +1357,7 @@
 
         function hideSchedulePopup() {
             schedulePopup.classList.remove('show');
+            document.getElementById('scheduleOverlay').classList.remove('show');
             clearTimeout(popupTimeout);
             clearInterval(popupProgressInterval);
         }
