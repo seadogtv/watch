@@ -464,21 +464,31 @@
             position: fixed;
             inset: 0;
             z-index: 300;
-            background: rgba(0, 0, 0, 0.8);
             display: none;
             align-items: center;
             justify-content: center;
         }
         .login-modal.show {
             display: flex;
+            animation: loginIn 0.2s ease-out;
+        }
+        @keyframes loginIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .login-box {
-            background: #111;
-            border: 1px solid #222;
+            background: #0f0f0f;
+            border: none;
             padding: 2rem;
             width: 90%;
             max-width: 360px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
             text-align: center;
         }
         .login-box h2 {
@@ -544,9 +554,17 @@
             flex-shrink: 0;
             transition: background-color 0.2s;
             margin-left: 0.5rem;
+            overflow: hidden;
         }
         .user-badge:hover {
             background: #444;
+        }
+        .user-badge img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            pointer-events: none;
         }
         .user-avatar {
             width: 100%;
@@ -777,20 +795,40 @@
             if (existingIcon) existingIcon.remove()
             
             if (currentUser) {
-                // Adiciona badge com a primeira letra do nome
+                // Adiciona badge com a foto do Google
                 const userBadge = document.createElement('div')
                 userBadge.className = 'user-badge'
                 userBadge.onclick = handleLogout
                 userBadge.title = `${currentUser.email} - Clique para sair`
                 
-                const avatar = document.createElement('div')
-                avatar.className = 'user-avatar'
+                // Verifica se tem foto do Google
+                const userAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture
                 
-                // Pega a primeira letra do nome ou email
-                const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email
-                avatar.textContent = displayName[0].toUpperCase()
+                if (userAvatar) {
+                    // Usa a foto do Google
+                    const img = document.createElement('img')
+                    img.src = userAvatar
+                    img.alt = currentUser.email
+                    img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;'
+                    img.onerror = function() {
+                        // Se a imagem falhar, usa a inicial
+                        this.remove()
+                        const fallback = document.createElement('div')
+                        fallback.className = 'user-avatar'
+                        const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email
+                        fallback.textContent = displayName[0].toUpperCase()
+                        userBadge.appendChild(fallback)
+                    }
+                    userBadge.appendChild(img)
+                } else {
+                    // Usa a inicial como fallback
+                    const avatar = document.createElement('div')
+                    avatar.className = 'user-avatar'
+                    const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email
+                    avatar.textContent = displayName[0].toUpperCase()
+                    userBadge.appendChild(avatar)
+                }
                 
-                userBadge.appendChild(avatar)
                 searchContainer.appendChild(userBadge)
             } else {
                 // Adiciona botão de login (ícone)
@@ -807,13 +845,6 @@
         // Fechar modal com ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && document.getElementById('loginModal').classList.contains('show')) {
-                closeLoginModal()
-            }
-        })
-
-        // Fechar modal clicando fora
-        document.getElementById('loginModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('loginModal')) {
                 closeLoginModal()
             }
         })
