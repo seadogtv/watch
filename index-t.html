@@ -596,6 +596,22 @@
         .login-icon-btn:hover {
             color: #ffffff;
         }
+        .premium-icon-btn {
+            cursor: pointer;
+            color: #666;
+            font-size: 1rem;
+            transition: color 0.2s;
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+        .premium-icon-btn:hover {
+            color: #b9f2ff;
+        }
         .profile-popup {
             position: fixed;
             z-index: 250;
@@ -672,6 +688,26 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .profile-redeem-btn {
+            width: 100%;
+            padding: 0.625rem;
+            background: transparent;
+            color: #b9f2ff;
+            border: 1px solid #b9f2ff;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            transition: background-color 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            letter-spacing: 0.01em;
+            margin-bottom: 0.5rem;
+        }
+        .profile-redeem-btn:hover {
+            background: rgba(185, 242, 255, 0.1);
+        }
         .profile-logout-btn {
             width: 100%;
             padding: 0.625rem;
@@ -690,6 +726,95 @@
         }
         .profile-logout-btn:hover {
             background: #e0e0e0;
+        }
+        .giftcard-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .giftcard-modal.show {
+            display: flex;
+            animation: loginIn 0.2s ease-out;
+        }
+        .giftcard-box {
+            background: #0f0f0f;
+            border: none;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+        .giftcard-box h2 {
+            font-family: 'Pirata One', cursive;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+        .giftcard-subtitle {
+            font-size: 0.75rem;
+            color: #777;
+            margin-bottom: 1.5rem;
+        }
+        .giftcard-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            margin-bottom: 0.75rem;
+            outline: none;
+            font-size: 0.875rem;
+            text-align: center;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            transition: border-color 0.2s;
+        }
+        .giftcard-input:focus {
+            border-color: #555;
+        }
+        .giftcard-input::placeholder {
+            color: #666;
+            letter-spacing: 0.1em;
+        }
+        .giftcard-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        .giftcard-btn:hover {
+            background: #e0e0e0;
+        }
+        .giftcard-message {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
+            display: none;
+            border-radius: 4px;
+        }
+        .giftcard-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+        .giftcard-message.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
         }
     </style>
 </head>
@@ -756,7 +881,6 @@
         </div>
     </div>
 
-    <!-- Modal de Login -->
     <div id="loginModal" class="login-modal">
         <div class="login-box">
             <h2>seadog</h2>
@@ -776,8 +900,23 @@
         </div>
     </div>
 
-    <!-- Popup de Perfil -->
     <div id="profilePopup" class="profile-popup"></div>
+
+    <div id="giftcardModal" class="giftcard-modal">
+        <div class="giftcard-box">
+            <h2>Resgatar Gift Card</h2>
+            <p class="giftcard-subtitle">Insira o código para ativar seu premium</p>
+            
+            <div class="giftcard-message" id="giftcardMessage"></div>
+            
+            <input type="text" id="giftcardInput" class="giftcard-input" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" maxlength="29">
+            
+            <button class="giftcard-btn" onclick="handleRedeemGiftCard()">
+                <i class="fa-solid fa-gem"></i>
+                Resgatar
+            </button>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -785,16 +924,13 @@
             if (e.target.tagName === 'IMG') e.preventDefault();
         });
 
-        // ============ CONFIGURAÇÃO DO SUPABASE ============
         const SUPABASE_URL = 'https://sjwgmfmrczvtanqtdxxk.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqd2dtZm1yY3p2dGFucXRkeHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTE1NTcsImV4cCI6MjEwMjk4NzU1N30.sLXnGqVXN-WZz7qNf-jfaN7w2CfI3N2SnHrNqUHdIhY'
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-        // ============ FUNÇÕES DE LOGIN ============
         let currentUser = null
 
-        // Verificar login ao carregar
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
             if (user) {
@@ -803,38 +939,31 @@
             }
         }
 
-        // Verificar se há token na URL (após redirecionamento do OAuth)
         async function handleAuthRedirect() {
             const hash = window.location.hash
             if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-                // Limpa a URL
                 window.history.replaceState(null, '', window.location.pathname)
                 
-                // Verifica a sessão novamente
                 const { data: { user } } = await supabaseClient.auth.getUser()
                 if (user) {
                     currentUser = user
                     updateUserInterface()
-                    console.log('Login realizado com sucesso!')
                 }
             }
         }
 
-        // Mostrar modal de login
         function showLoginModal() {
             document.getElementById('loginModal').classList.add('show')
             document.body.style.overflow = 'hidden'
             document.getElementById('loginError').style.display = 'none'
         }
 
-        // Fechar modal de login
         function closeLoginModal() {
             document.getElementById('loginModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('loginError').style.display = 'none'
         }
 
-        // Mostrar erro
         function showLoginError(message) {
             const errorEl = document.getElementById('loginError')
             if (message) {
@@ -845,7 +974,6 @@
             }
         }
 
-        // Login com Google
         async function handleGoogleLogin() {
             showLoginError('')
             
@@ -860,14 +988,11 @@
                 if (error) {
                     showLoginError('Erro: ' + error.message)
                 }
-                // Se não houver erro, o usuário será redirecionado para o Google
             } catch (err) {
                 showLoginError('Erro ao conectar com Google')
-                console.error('Erro:', err)
             }
         }
 
-        // Sair
         async function handleLogout() {
             hideProfilePopup()
             await supabaseClient.auth.signOut()
@@ -875,7 +1000,73 @@
             updateUserInterface()
         }
 
-        // Mostrar/ocultar popup de perfil
+        function showGiftCardModal() {
+            hideProfilePopup()
+            document.getElementById('giftcardModal').classList.add('show')
+            document.body.style.overflow = 'hidden'
+            document.getElementById('giftcardMessage').className = 'giftcard-message'
+            document.getElementById('giftcardInput').value = ''
+            setTimeout(() => document.getElementById('giftcardInput').focus(), 100)
+        }
+
+        function closeGiftCardModal() {
+            document.getElementById('giftcardModal').classList.remove('show')
+            document.body.style.overflow = ''
+            document.getElementById('giftcardMessage').className = 'giftcard-message'
+        }
+
+        function showGiftCardMessage(message, type) {
+            const msgEl = document.getElementById('giftcardMessage')
+            msgEl.textContent = message
+            msgEl.className = 'giftcard-message ' + type
+        }
+
+        async function handleRedeemGiftCard() {
+            if (!currentUser) {
+                showGiftCardMessage('Você precisa estar logado para resgatar um gift card', 'error')
+                return
+            }
+            
+            const code = document.getElementById('giftcardInput').value.trim()
+            
+            if (!code) {
+                showGiftCardMessage('Por favor, insira o código do gift card', 'error')
+                return
+            }
+            
+            const formattedCode = code.toUpperCase().replace(/\s+/g, '')
+            
+            if (!formattedCode.match(/^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/)) {
+                showGiftCardMessage('Formato de código inválido', 'error')
+                return
+            }
+            
+            const { data, error } = await supabaseClient.rpc('redeem_gift_card', {
+                p_code: formattedCode,
+                p_user_id: currentUser.id
+            })
+            
+            if (error) {
+                showGiftCardMessage('Erro ao resgatar: ' + error.message, 'error')
+                return
+            }
+            
+            if (data && data.length > 0) {
+                const result = data[0]
+                if (result.success) {
+                    if (result.expires_at) {
+                        const expiryDate = new Date(result.expires_at)
+                        showGiftCardMessage(`${result.message}! Premium válido até ${expiryDate.toLocaleDateString('pt-BR')}`, 'success')
+                    } else {
+                        showGiftCardMessage(result.message, 'success')
+                    }
+                    document.getElementById('giftcardInput').value = ''
+                } else {
+                    showGiftCardMessage(result.message, 'error')
+                }
+            }
+        }
+
         function toggleProfilePopup() {
             const popup = document.getElementById('profilePopup')
             
@@ -884,7 +1075,6 @@
                 return
             }
             
-            // Monta o conteúdo do popup
             const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Usuário'
             const userAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture
             
@@ -905,13 +1095,16 @@
                         <div class="profile-email">${currentUser.email}</div>
                     </div>
                 </div>
+                <button class="profile-redeem-btn" onclick="showGiftCardModal()">
+                    <i class="fa-solid fa-gem"></i>
+                    Resgatar Gift Card
+                </button>
                 <button class="profile-logout-btn" onclick="handleLogout()">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Sair da conta
                 </button>
             `
             
-            // Posiciona o popup abaixo do badge
             const badge = document.querySelector('.user-badge')
             if (badge) {
                 const rect = badge.getBoundingClientRect()
@@ -922,30 +1115,34 @@
             popup.classList.add('show')
         }
         
-        // Esconder popup de perfil
         function hideProfilePopup() {
             const popup = document.getElementById('profilePopup')
             popup.classList.remove('show')
         }
 
-        // Atualizar interface com base no login
         function updateUserInterface() {
             const searchContainer = document.getElementById('searchContainer')
             
-            // Remove elementos de login existentes
             const existingBadge = document.querySelector('.user-badge')
             const existingIcon = document.querySelector('.login-icon-btn')
+            const existingPremiumIcon = document.querySelector('.premium-icon-btn')
             if (existingBadge) existingBadge.remove()
             if (existingIcon) existingIcon.remove()
+            if (existingPremiumIcon) existingPremiumIcon.remove()
+            
+            const premiumIcon = document.createElement('div')
+            premiumIcon.className = 'premium-icon-btn'
+            premiumIcon.onclick = showGiftCardModal
+            premiumIcon.title = 'Resgatar Gift Card'
+            premiumIcon.innerHTML = '<i class="fa-regular fa-gem"></i>'
+            searchContainer.appendChild(premiumIcon)
             
             if (currentUser) {
-                // Adiciona badge com a foto do Google
                 const userBadge = document.createElement('div')
                 userBadge.className = 'user-badge'
                 userBadge.onclick = toggleProfilePopup
                 userBadge.title = currentUser.email
                 
-                // Verifica se tem foto do Google
                 const userAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture
                 
                 if (userAvatar) {
@@ -971,7 +1168,6 @@
                 
                 searchContainer.appendChild(userBadge)
             } else {
-                // Adiciona botão de login (ícone)
                 const loginIcon = document.createElement('div')
                 loginIcon.className = 'login-icon-btn'
                 loginIcon.onclick = showLoginModal
@@ -982,19 +1178,47 @@
             }
         }
 
-        // Fechar modal de login quando clicar fora
         document.getElementById('loginModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('loginModal')) {
                 closeLoginModal()
             }
         })
 
-        // Fechar agendamento ao clicar no overlay
+        document.getElementById('giftcardModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('giftcardModal')) {
+                closeGiftCardModal()
+            }
+        })
+
+        document.getElementById('giftcardInput').addEventListener('input', (e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+            
+            if (value.length > 25) {
+                value = value.substring(0, 25)
+            }
+            
+            let formatted = ''
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 5 === 0) {
+                    formatted += '-'
+                }
+                formatted += value[i]
+            }
+            
+            e.target.value = formatted
+        })
+
+        document.getElementById('giftcardInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                handleRedeemGiftCard()
+            }
+        })
+
         document.getElementById('scheduleOverlay').addEventListener('click', () => {
             hideSchedulePopup();
         });
 
-        // Fechar popup de perfil quando clicar fora
         document.addEventListener('click', (e) => {
             const popup = document.getElementById('profilePopup')
             const badge = document.querySelector('.user-badge')
@@ -1006,24 +1230,21 @@
             }
         })
 
-        // Fechar com ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (document.getElementById('loginModal').classList.contains('show')) {
                     closeLoginModal()
+                }
+                if (document.getElementById('giftcardModal').classList.contains('show')) {
+                    closeGiftCardModal()
                 }
                 hideProfilePopup()
                 hideSchedulePopup()
             }
         })
 
-        // Mostrar interface inicial (ícone de login)
         updateUserInterface()
-        
-        // Inicializar verificação de login
         checkLogin()
-        
-        // Verificar redirecionamento de autenticação
         handleAuthRedirect()
 
         const searchIcon = document.getElementById('searchIcon');
@@ -1940,38 +2161,31 @@
                     });
                 }
             } catch {
-                console.log('Não foi possível carregar o guia de programação');
+                
             }
         }
 
         async function loadChannels() {
             try {
-                // Buscar canais do Supabase
-                  const { data: channelsData, error: channelsError } = await supabaseClient
-                      .from('channels')
-                      .select('*')
-                      .order('name');
-                  
-                  if (channelsError) {
-                      console.error('Erro do Supabase:', channelsError);
-                      throw channelsError;
-                  }
-                  
-                  console.log('Dados recebidos:', channelsData);
-                  
-                  if (channelsData && channelsData.length > 0) {
-                      allChannels = channelsData;
-                      console.log('Canais carregados:', allChannels.length);
-                  } else {
-                      console.log('Nenhum canal encontrado');
-                      allChannels = [];
-                  }
-                  
-                  await loadGuide();
-                  renderGuide();
-                  hideLoadingScreen();
+                const { data: channelsData, error: channelsError } = await supabaseClient
+                    .from('channels')
+                    .select('*')
+                    .order('name');
+                
+                if (channelsError) {
+                    throw channelsError;
+                }
+                
+                if (channelsData && channelsData.length > 0) {
+                    allChannels = channelsData;
+                } else {
+                    allChannels = [];
+                }
+                
+                await loadGuide();
+                renderGuide();
+                hideLoadingScreen();
             } catch (error) {
-                console.error('Erro:', error);
                 hideLoadingScreen();
                 content.innerHTML = `
                     <div class="text-center py-20 text-gray-600">
