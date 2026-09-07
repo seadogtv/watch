@@ -10,6 +10,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js"></script>
+    <script src="https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
@@ -872,7 +873,6 @@
     </main>
 
     <div id="socialBarContainer" class="social-bar-container">
-        <!-- Código do Social Bar da Adsterra -->
     </div>
 
     <div id="tooltip" class="programme-tooltip"></div>
@@ -946,7 +946,6 @@
                 Resgatar Gift Card
             </button>
             <div class="banner-ad-container" id="giftcardBanner">
-                <!-- Banner 320x50 para mobile / 468x60 para desktop -->
             </div>
         </div>
     </div>
@@ -969,11 +968,6 @@
         let touchEndX = 0
         let touchEndY = 0
         let isSwiping = false
-        let adCounter = 0
-        let lastPopunderTime = 0
-        const AD_INTERVAL = 3
-        const AD_CHANCE = 0.5
-        const POPUNDER_COOLDOWN = 30000
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
@@ -981,7 +975,7 @@
                 currentUser = user
                 await loadUserSchedules()
                 updateUserInterface()
-                showSocialBar()
+                updateAdsVisibility()
             }
         }
 
@@ -995,7 +989,7 @@
                     currentUser = user
                     await loadUserSchedules()
                     updateUserInterface()
-                    showSocialBar()
+                    updateAdsVisibility()
                 }
             }
         }
@@ -1040,61 +1034,21 @@
             return false
         }
 
-        function showSocialBar() {
+        async function updateAdsVisibility() {
+            const socialBar = document.getElementById('socialBarContainer')
+            
             if (!currentUser) {
-                document.getElementById('socialBarContainer').classList.add('show')
+                socialBar.classList.add('show')
+                return
+            }
+            
+            const premium = await isUserPremium()
+            
+            if (premium) {
+                socialBar.classList.remove('show')
             } else {
-                isUserPremium().then(premium => {
-                    if (!premium) {
-                        document.getElementById('socialBarContainer').classList.add('show')
-                    }
-                })
+                socialBar.classList.add('show')
             }
-        }
-
-        function hideSocialBar() {
-            document.getElementById('socialBarContainer').classList.remove('show')
-        }
-
-        function shouldShowPopunder() {
-            const now = Date.now()
-            
-            if (now - lastPopunderTime < POPUNDER_COOLDOWN) {
-                return false
-            }
-            
-            adCounter++
-            
-            if (adCounter >= AD_INTERVAL) {
-                adCounter = 0
-                if (Math.random() < AD_CHANCE) {
-                    lastPopunderTime = now
-                    return true
-                }
-            }
-            
-            return false
-        }
-
-        async function openPlayerWithAds(index) {
-            const premium = await isUserPremium()
-            
-            if (!premium) {
-                adCounter = 0
-                lastPopunderTime = Date.now()
-            }
-            
-            openPlayerByIndex(index)
-        }
-
-        async function navigatePlayerWithAds(direction) {
-            const premium = await isUserPremium()
-            
-            if (!premium && shouldShowPopunder()) {
-                adCounter = 0
-            }
-            
-            navigatePlayer(direction)
         }
 
         function showLoginModal() {
@@ -1143,8 +1097,8 @@
             await supabaseClient.auth.signOut()
             currentUser = null
             schedules = []
-            hideSocialBar()
             updateUserInterface()
+            updateAdsVisibility()
         }
 
         function showGiftCardModal() {
@@ -1157,6 +1111,7 @@
             document.body.style.overflow = 'hidden'
             document.getElementById('giftcardMessage').className = 'giftcard-message'
             document.getElementById('giftcardInput').value = ''
+            loadBannerAd()
             setTimeout(() => document.getElementById('giftcardInput').focus(), 100)
         }
 
@@ -1164,6 +1119,39 @@
             document.getElementById('giftcardModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('giftcardMessage').className = 'giftcard-message'
+        }
+
+        function loadBannerAd() {
+            const bannerContainer = document.getElementById('giftcardBanner')
+            const isMobile = window.innerWidth <= 480
+            
+            if (isMobile) {
+                bannerContainer.innerHTML = `
+                    <script>
+                        atOptions = {
+                            'key' : '03ad0caeda3b785cc8ef31e70f215600',
+                            'format' : 'iframe',
+                            'height' : 50,
+                            'width' : 320,
+                            'params' : {}
+                        };
+                    <\/script>
+                    <script src="https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js"><\/script>
+                `
+            } else {
+                bannerContainer.innerHTML = `
+                    <script>
+                        atOptions = {
+                            'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
+                            'format' : 'iframe',
+                            'height' : 60,
+                            'width' : 468,
+                            'params' : {}
+                        };
+                    <\/script>
+                    <script src="https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js"><\/script>
+                `
+            }
         }
 
         function showGiftCardMessage(message, type) {
@@ -1213,7 +1201,7 @@
                     }
                     document.getElementById('giftcardInput').value = ''
                     updateUserInterface()
-                    hideSocialBar()
+                    updateAdsVisibility()
                 } else {
                     showGiftCardMessage(result.message, 'error')
                 }
@@ -1463,6 +1451,7 @@
         })
 
         updateUserInterface()
+        updateAdsVisibility()
         checkLogin()
         handleAuthRedirect()
 
@@ -1530,19 +1519,19 @@
                         break;
                     case 'ArrowLeft':
                         e.preventDefault();
-                        navigatePlayerWithAds('left');
+                        navigatePlayer('left');
                         break;
                     case 'ArrowRight':
                         e.preventDefault();
-                        navigatePlayerWithAds('right');
+                        navigatePlayer('right');
                         break;
                     case 'ArrowUp':
                         e.preventDefault();
-                        navigatePlayerWithAds('up');
+                        navigatePlayer('up');
                         break;
                     case 'ArrowDown':
                         e.preventDefault();
-                        navigatePlayerWithAds('down');
+                        navigatePlayer('down');
                         break;
                     case 'f':
                     case 'F':
@@ -1563,7 +1552,7 @@
                     if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
                         const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
                         if (blockData && (blockData.isNow || blockData.isEmpty)) {
-                            openPlayerWithAds(selectedChannelIndex);
+                            openPlayerByIndex(selectedChannelIndex);
                         } else if (blockData) {
                             handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
                         }
@@ -1815,7 +1804,7 @@
             if (!blockData) return;
             
             if (blockData.isNow) {
-                openPlayerWithAds(channelIndex);
+                openPlayerByIndex(channelIndex);
                 return;
             }
             
@@ -1898,7 +1887,7 @@
                         `${schedule.title} em ${channel?.name || ''}`,
                         'Assistir agora',
                         async () => {
-                            openPlayerWithAds(schedule.channelIndex);
+                            openPlayerByIndex(schedule.channelIndex);
                             await supabaseClient
                                 .from('schedules')
                                 .delete()
@@ -2157,7 +2146,7 @@
                 
                 channelListHtml += `
                     <div class="guide-channel-item" 
-                         onclick='openPlayerWithAds(${channelIndex})' 
+                         onclick='openPlayerByIndex(${channelIndex})' 
                          onmouseenter='handleChannelHover(this, ${channelIndex})'
                          onmouseleave='handleChannelLeave()'>
                         <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
@@ -2178,7 +2167,7 @@
                         rowHtml += `
                             <div class="guide-programme-block guide-programme-empty" 
                                  style="width: ${width}px; min-width: ${width}px;"
-                                 onclick='openPlayerWithAds(${channelIndex})'
+                                 onclick='openPlayerByIndex(${channelIndex})'
                                  onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
                                  onmouseleave='handleBlockLeave()'>
                             </div>
@@ -2217,7 +2206,7 @@
                     const isFuture = blockStart > nowTimestamp;
                     
                     const clickHandler = isNow 
-                        ? `onclick='openPlayerWithAds(${channelIndex})'` 
+                        ? `onclick='openPlayerByIndex(${channelIndex})'` 
                         : isFuture 
                             ? `onclick='handleScheduleClick(${channelIndex}, ${blockIndex})'` 
                             : '';
@@ -2282,7 +2271,7 @@
                 const channelSlug = channelParam.toLowerCase();
                 const channelIndex = flatChannels.findIndex(c => (c.slug || c.name || '').toLowerCase() === channelSlug);
                 if (channelIndex >= 0) {
-                    setTimeout(() => openPlayerWithAds(channelIndex), 500);
+                    setTimeout(() => openPlayerByIndex(channelIndex), 500);
                 }
             }
         }
@@ -2435,17 +2424,17 @@
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
                 if (Math.abs(deltaX) > minSwipeDistance) {
                     if (deltaX > 0) {
-                        navigatePlayerWithAds('left')
+                        navigatePlayer('left')
                     } else {
-                        navigatePlayerWithAds('right')
+                        navigatePlayer('right')
                     }
                 }
             } else {
                 if (Math.abs(deltaY) > minSwipeDistance) {
                     if (deltaY > 0) {
-                        navigatePlayerWithAds('up')
+                        navigatePlayer('up')
                     } else {
-                        navigatePlayerWithAds('down')
+                        navigatePlayer('down')
                     }
                 }
             }
