@@ -675,8 +675,8 @@
         .profile-logout-btn {
             width: 100%;
             padding: 0.625rem;
-            background: #1a1a1a;
-            color: #e5e5e5;
+            background: transparent;
+            color: #ef5350;
             border: none;
             cursor: pointer;
             font-size: 0.8125rem;
@@ -688,7 +688,7 @@
             gap: 0.5rem;
         }
         .profile-logout-btn:hover {
-            background: #252525;
+            background: rgba(239, 83, 80, 0.1);
         }
     </style>
 </head>
@@ -836,8 +836,12 @@
         // Mostrar erro
         function showLoginError(message) {
             const errorEl = document.getElementById('loginError')
-            errorEl.textContent = message
-            errorEl.style.display = 'block'
+            if (message) {
+                errorEl.textContent = message
+                errorEl.style.display = 'block'
+            } else {
+                errorEl.style.display = 'none'
+            }
         }
 
         // Login com Google
@@ -902,7 +906,7 @@
                 </div>
                 <button class="profile-logout-btn" onclick="handleLogout()">
                     <i class="fa-solid fa-right-from-bracket"></i>
-                    Sair
+                    Sair da conta
                 </button>
             `
             
