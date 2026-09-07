@@ -758,9 +758,10 @@
             border: none;
             padding: 2rem;
             width: 90%;
-            max-width: 400px;
+            max-width: 500px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
+            position: relative;
         }
         .giftcard-subtitle {
             font-size: 0.75rem;
@@ -843,8 +844,21 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-top: 0.75rem;
-            min-height: 50px;
+            margin-top: 1rem;
+            min-height: 60px;
+            width: 100%;
+            max-width: 468px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+            border-radius: 4px;
+            background: #1a1a1a;
+        }
+        @media (max-width: 480px) {
+            .banner-ad-container {
+                max-width: 320px;
+                min-height: 50px;
+            }
         }
     </style>
 </head>
@@ -1119,38 +1133,47 @@
             document.getElementById('giftcardModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('giftcardMessage').className = 'giftcard-message'
+            document.getElementById('giftcardBanner').innerHTML = ''
         }
 
         function loadBannerAd() {
             const bannerContainer = document.getElementById('giftcardBanner')
             const isMobile = window.innerWidth <= 480
             
+            bannerContainer.innerHTML = ''
+            
             if (isMobile) {
-                bannerContainer.innerHTML = `
-                    <script>
-                        atOptions = {
-                            'key' : '03ad0caeda3b785cc8ef31e70f215600',
-                            'format' : 'iframe',
-                            'height' : 50,
-                            'width' : 320,
-                            'params' : {}
-                        };
-                    <\/script>
-                    <script src="https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js"><\/script>
+                const script1 = document.createElement('script')
+                script1.textContent = `
+                    atOptions = {
+                        'key' : '03ad0caeda3b785cc8ef31e70f215600',
+                        'format' : 'iframe',
+                        'height' : 50,
+                        'width' : 320,
+                        'params' : {}
+                    };
                 `
+                const script2 = document.createElement('script')
+                script2.src = 'https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js'
+                
+                bannerContainer.appendChild(script1)
+                bannerContainer.appendChild(script2)
             } else {
-                bannerContainer.innerHTML = `
-                    <script>
-                        atOptions = {
-                            'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
-                            'format' : 'iframe',
-                            'height' : 60,
-                            'width' : 468,
-                            'params' : {}
-                        };
-                    <\/script>
-                    <script src="https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js"><\/script>
+                const script1 = document.createElement('script')
+                script1.textContent = `
+                    atOptions = {
+                        'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
+                        'format' : 'iframe',
+                        'height' : 60,
+                        'width' : 468,
+                        'params' : {}
+                    };
                 `
+                const script2 = document.createElement('script')
+                script2.src = 'https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js'
+                
+                bannerContainer.appendChild(script1)
+                bannerContainer.appendChild(script2)
             }
         }
 
@@ -1454,6 +1477,12 @@
         updateAdsVisibility()
         checkLogin()
         handleAuthRedirect()
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                updateAdsVisibility()
+            }, 2000)
+        })
 
         const searchIcon = document.getElementById('searchIcon');
         const searchInput = document.getElementById('searchInput');
