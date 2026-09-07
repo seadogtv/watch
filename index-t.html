@@ -551,9 +551,19 @@
             transition: background-color 0.2s;
             margin-left: 0.5rem;
             overflow: hidden;
+            border: 2px solid #666;
         }
         .user-badge:hover {
             background: #444;
+        }
+        .user-badge.free {
+            border-color: #888;
+        }
+        .user-badge.premium {
+            border-color: #4caf50;
+        }
+        .user-badge.lifetime {
+            border-color: #ec4899;
         }
         .user-badge img {
             width: 100%;
@@ -610,24 +620,25 @@
             display: inline-block;
             padding: 0.125rem 0.375rem;
             border-radius: 3px;
-            font-size: 0.625rem;
+            font-size: 0.5625rem;
             font-weight: 600;
             letter-spacing: 0.05em;
             text-transform: uppercase;
             margin-left: 0.375rem;
             vertical-align: middle;
+            line-height: 1.4;
         }
         .premium-tag.free {
+            background: #2a2a2a;
+            color: #999;
+        }
+        .premium-tag.premium {
             background: #1a3a1a;
             color: #4caf50;
         }
-        .premium-tag.premium {
-            background: #1a2a3a;
-            color: #2196f3;
-        }
         .premium-tag.lifetime {
-            background: #3a3a1a;
-            color: #ffc107;
+            background: #3a1a2a;
+            color: #ec4899;
         }
         .profile-popup {
             position: fixed;
@@ -697,6 +708,9 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
         }
         .profile-email {
             font-size: 0.75rem;
@@ -1080,7 +1094,6 @@
             }
             
             let premiumTag = ''
-            let premiumDuration = ''
             
             const { data: subscription, error: subError } = await supabaseClient
                 .from('premium_subscriptions')
@@ -1090,22 +1103,18 @@
             
             if (subscription && subscription.is_lifetime) {
                 premiumTag = '<span class="premium-tag lifetime">Vitalício</span>'
-                premiumDuration = 'Duração de premium: vitalício'
             } else if (subscription && subscription.expires_at) {
                 const expiryDate = new Date(subscription.expires_at)
                 const now = new Date()
                 
                 if (expiryDate > now) {
                     const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
-                    premiumTag = '<span class="premium-tag premium">Premium</span>'
-                    premiumDuration = `Duração de premium: ${daysRemaining} dias`
+                    premiumTag = `<span class="premium-tag premium">${daysRemaining} dias</span>`
                 } else {
                     premiumTag = '<span class="premium-tag free">Gratuito</span>'
-                    premiumDuration = 'Duração de premium: expirado'
                 }
             } else {
                 premiumTag = '<span class="premium-tag free">Gratuito</span>'
-                premiumDuration = 'Duração de premium: não possui'
             }
             
             popup.innerHTML = `
@@ -1115,11 +1124,10 @@
                     </div>
                     <div class="profile-details">
                         <div class="profile-name">
-                            ${displayName}
+                            <span>${displayName}</span>
                             ${premiumTag}
                         </div>
                         <div class="profile-email">${currentUser.email}</div>
-                        <div class="profile-email" style="margin-top: 0.25rem;">${premiumDuration}</div>
                     </div>
                 </div>
                 <button class="profile-logout-btn" onclick="handleLogout()">
@@ -1207,13 +1215,29 @@
                 .eq('user_id', currentUser.id)
                 .single()
             
-            if (subscription) {
-                const isActive = subscription.is_lifetime || 
-                    (subscription.expires_at && new Date(subscription.expires_at) > new Date())
+            const userBadge = document.querySelector('.user-badge')
+            
+            if (subscription && subscription.is_lifetime) {
+                if (userBadge) {
+                    userBadge.classList.add('lifetime')
+                }
+                return
+            }
+            
+            if (subscription && subscription.expires_at) {
+                const expiryDate = new Date(subscription.expires_at)
+                const now = new Date()
                 
-                if (isActive) {
+                if (expiryDate > now) {
+                    if (userBadge) {
+                        userBadge.classList.add('premium')
+                    }
                     return
                 }
+            }
+            
+            if (userBadge) {
+                userBadge.classList.add('free')
             }
             
             const premiumIconBtn = document.createElement('div')
@@ -1223,7 +1247,6 @@
             premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
             
             const searchContainer = document.getElementById('searchContainer')
-            const userBadge = document.querySelector('.user-badge')
             if (userBadge) {
                 searchContainer.insertBefore(premiumIconBtn, userBadge)
             }
