@@ -661,14 +661,14 @@
         const SUPABASE_URL = 'https://sjwgmfmrczvtanqtdxxk.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqd2dtZm1yY3p2dGFucXRkeHhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTE1NTcsImV4cCI6MjEwMjk4NzU1N30.sLXnGqVXN-WZz7qNf-jfaN7w2CfI3N2SnHrNqUHdIhY'
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
         // ============ FUNÇÕES DE LOGIN ============
         let currentUser = null
 
         // Verificar login ao carregar
         async function checkLogin() {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user } } = await supabaseClient.auth.getUser()
             if (user) {
                 currentUser = user
                 updateUserInterface()
@@ -701,7 +701,7 @@
             showLoginError('')
             
             try {
-                const { data, error } = await supabase.auth.signInWithOAuth({
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
                         redirectTo: window.location.origin + window.location.pathname
@@ -720,7 +720,7 @@
 
         // Sair
         async function handleLogout() {
-            await supabase.auth.signOut()
+            await supabaseClient.auth.signOut()
             currentUser = null
             updateUserInterface()
         }
