@@ -1139,6 +1139,7 @@
             renderGuide();
         });
 
+        const CHANNELS_API = 'https://opensheet.elk.sh/13_CjXtUc2AUF5qKE__Z7H_ruu_IjEXmQ0Js3trZ32ZM/1';
         const GUIDE_API = 'https://disret.disret.workers.dev/?url=https://reidosembeds.online/api/channels';
         const PREVIEW_API = 'https://disret.disret.workers.dev/?url=https://img.faz-o-eli.online/';
         const content = document.getElementById('content');
@@ -1946,20 +1947,13 @@
 
         async function loadChannels() {
             try {
-                // Buscar canais do Supabase
-                const { data: channelsData, error: channelsError } = await supabaseClient
-                    .from('channels')
-                    .select('*')
-                    .order('name');
+                const res = await fetch(CHANNELS_API);
+                const data = await res.json();
                 
-                if (channelsError) {
-                    throw channelsError;
-                }
-                
-                if (channelsData && channelsData.length > 0) {
-                    allChannels = channelsData;
+                if (Array.isArray(data)) {
+                    allChannels = data;
                 } else {
-                    allChannels = [];
+                    allChannels = data.data || [];
                 }
                 
                 await loadGuide();
