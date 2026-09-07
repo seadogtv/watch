@@ -533,15 +533,6 @@
             display: none;
             border-radius: 4px;
         }
-        .login-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 0.5rem;
-            font-size: 0.75rem;
-            margin-bottom: 0.75rem;
-            display: none;
-            border-radius: 4px;
-        }
         .user-badge {
             display: flex;
             align-items: center;
@@ -593,6 +584,100 @@
         }
         .login-icon-btn:hover {
             color: #ffffff;
+        }
+        .profile-popup {
+            position: fixed;
+            z-index: 250;
+            background: #0f0f0f;
+            border: none;
+            padding: 1rem;
+            min-width: 240px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            display: none;
+            animation: profileIn 0.15s ease-out;
+        }
+        .profile-popup.show {
+            display: block;
+        }
+        @keyframes profileIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .profile-avatar-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        .profile-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .profile-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile-email {
+            font-size: 0.75rem;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile-logout-btn {
+            width: 100%;
+            padding: 0.625rem;
+            background: #1a1a1a;
+            color: #e5e5e5;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .profile-logout-btn:hover {
+            background: #252525;
         }
     </style>
 </head>
@@ -664,7 +749,6 @@
             <p class="login-subtitle">Entre para acessar recursos exclusivos</p>
             
             <div class="login-error" id="loginError"></div>
-            <div class="login-success" id="loginSuccess"></div>
             
             <button class="google-btn" onclick="handleGoogleLogin()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -677,6 +761,9 @@
             </button>
         </div>
     </div>
+
+    <!-- Popup de Perfil -->
+    <div id="profilePopup" class="profile-popup"></div>
 
     <script>
         document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -714,7 +801,7 @@
                 if (user) {
                     currentUser = user
                     updateUserInterface()
-                    showLoginSuccess('Login realizado com sucesso!')
+                    console.log('Login realizado com sucesso!')
                 }
             }
         }
@@ -724,7 +811,6 @@
             document.getElementById('loginModal').classList.add('show')
             document.body.style.overflow = 'hidden'
             document.getElementById('loginError').style.display = 'none'
-            document.getElementById('loginSuccess').style.display = 'none'
         }
 
         // Fechar modal de login
@@ -732,7 +818,6 @@
             document.getElementById('loginModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('loginError').style.display = 'none'
-            document.getElementById('loginSuccess').style.display = 'none'
         }
 
         // Mostrar erro
@@ -740,19 +825,6 @@
             const errorEl = document.getElementById('loginError')
             errorEl.textContent = message
             errorEl.style.display = 'block'
-            document.getElementById('loginSuccess').style.display = 'none'
-        }
-
-        // Mostrar sucesso
-        function showLoginSuccess(message) {
-            const successEl = document.getElementById('loginSuccess')
-            successEl.textContent = message
-            successEl.style.display = 'block'
-            document.getElementById('loginError').style.display = 'none'
-            
-            setTimeout(() => {
-                successEl.style.display = 'none'
-            }, 3000)
         }
 
         // Login com Google
@@ -779,9 +851,63 @@
 
         // Sair
         async function handleLogout() {
+            hideProfilePopup()
             await supabaseClient.auth.signOut()
             currentUser = null
             updateUserInterface()
+        }
+
+        // Mostrar/ocultar popup de perfil
+        function toggleProfilePopup() {
+            const popup = document.getElementById('profilePopup')
+            
+            if (popup.classList.contains('show')) {
+                hideProfilePopup()
+                return
+            }
+            
+            // Monta o conteúdo do popup
+            const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Usuário'
+            const userAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture
+            
+            let avatarHtml = ''
+            if (userAvatar) {
+                avatarHtml = `<img src="${userAvatar}" alt="${displayName}" onerror="this.parentElement.innerHTML = '<div class=\'profile-avatar-fallback\'>${displayName[0].toUpperCase()}</div>'">`
+            } else {
+                avatarHtml = `<div class="profile-avatar-fallback">${displayName[0].toUpperCase()}</div>`
+            }
+            
+            popup.innerHTML = `
+                <div class="profile-info">
+                    <div class="profile-avatar">
+                        ${avatarHtml}
+                    </div>
+                    <div class="profile-details">
+                        <div class="profile-name">${displayName}</div>
+                        <div class="profile-email">${currentUser.email}</div>
+                    </div>
+                </div>
+                <button class="profile-logout-btn" onclick="handleLogout()">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sair
+                </button>
+            `
+            
+            // Posiciona o popup abaixo do badge
+            const badge = document.querySelector('.user-badge')
+            if (badge) {
+                const rect = badge.getBoundingClientRect()
+                popup.style.top = (rect.bottom + 8) + 'px'
+                popup.style.right = (window.innerWidth - rect.right) + 'px'
+            }
+            
+            popup.classList.add('show')
+        }
+        
+        // Esconder popup de perfil
+        function hideProfilePopup() {
+            const popup = document.getElementById('profilePopup')
+            popup.classList.remove('show')
         }
 
         // Atualizar interface com base no login
@@ -798,20 +924,17 @@
                 // Adiciona badge com a foto do Google
                 const userBadge = document.createElement('div')
                 userBadge.className = 'user-badge'
-                userBadge.onclick = handleLogout
-                userBadge.title = `${currentUser.email} - Clique para sair`
+                userBadge.onclick = toggleProfilePopup
+                userBadge.title = currentUser.email
                 
                 // Verifica se tem foto do Google
                 const userAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture
                 
                 if (userAvatar) {
-                    // Usa a foto do Google
                     const img = document.createElement('img')
                     img.src = userAvatar
                     img.alt = currentUser.email
-                    img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;'
                     img.onerror = function() {
-                        // Se a imagem falhar, usa a inicial
                         this.remove()
                         const fallback = document.createElement('div')
                         fallback.className = 'user-avatar'
@@ -821,7 +944,6 @@
                     }
                     userBadge.appendChild(img)
                 } else {
-                    // Usa a inicial como fallback
                     const avatar = document.createElement('div')
                     avatar.className = 'user-avatar'
                     const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email
@@ -844,8 +966,23 @@
 
         // Fechar modal com ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && document.getElementById('loginModal').classList.contains('show')) {
-                closeLoginModal()
+            if (e.key === 'Escape') {
+                if (document.getElementById('loginModal').classList.contains('show')) {
+                    closeLoginModal()
+                }
+                hideProfilePopup()
+            }
+        })
+
+        // Fechar popup de perfil quando clicar fora
+        document.addEventListener('click', (e) => {
+            const popup = document.getElementById('profilePopup')
+            const badge = document.querySelector('.user-badge')
+            
+            if (popup.classList.contains('show') && 
+                !popup.contains(e.target) && 
+                badge && !badge.contains(e.target)) {
+                hideProfilePopup()
             }
         })
 
@@ -1103,16 +1240,13 @@
         function showTooltip(element, title, startTime, endTime, channelSlug, isNow) {
             if (playerOpen) return;
             
-            // Limpa timeout anterior
             clearTimeout(tooltipTimeout);
             
-            // Define um novo timeout com delay de 1s
             tooltipTimeout = setTimeout(() => {
                 const rect = element.getBoundingClientRect();
                 
                 let tooltipContent = '';
                 
-                // Adiciona preview apenas para programas ao vivo
                 if (isNow && channelSlug) {
                     const previewUrl = getPreviewUrl(channelSlug);
                     tooltipContent += `<img src="${previewUrl}" alt="Preview" class="tooltip-preview" onerror="this.style.display='none'">`;
@@ -1134,21 +1268,17 @@
                 
                 const tooltipRect = tooltip.getBoundingClientRect();
                 
-                // Alinha o lado esquerdo do tooltip com o bloco
                 let left = rect.left;
                 let top = rect.top - tooltipRect.height - 8;
                 
-                // Verifica se o tooltip não ultrapassa a borda direita
                 if (left + tooltipRect.width > window.innerWidth) {
                     left = window.innerWidth - tooltipRect.width - 8;
                 }
                 
-                // Verifica se o tooltip não ultrapassa a borda esquerda
                 if (left < 0) {
                     left = 8;
                 }
                 
-                // Se não houver espaço acima, mostra abaixo
                 if (top < 0) {
                     top = rect.bottom + 8;
                 }
@@ -1565,7 +1695,6 @@
                     let blockStart;
                     let blockEnd;
                     
-                    // Correção: primeiro bloco (programa atual) começa no início da grade (hora cheia)
                     if (programmeIndex === 0 && prog.isNow) {
                         blockStart = currentTime;
                         blockEnd = Math.min(prog.end_timestamp || guideEndTimestamp, guideEndTimestamp);
@@ -1645,7 +1774,6 @@
             selectedChannelIndex = 0;
             selectedBlockIndex = 0;
             
-            // Abre o canal diretamente se houver parâmetro na URL
             const urlParams = new URLSearchParams(window.location.search);
             const channelParam = urlParams.get('c');
             if (channelParam) {
@@ -1687,7 +1815,6 @@
             document.body.style.overflow = 'hidden';
             showPlayerHeader();
             
-            // Atualiza a URL com o canal atual
             const channelSlug = channel.slug || channel.name || '';
             const newUrl = window.location.pathname + '?c=' + encodeURIComponent(channelSlug.toLowerCase());
             history.pushState({ playerOpen: true, channel: channelSlug.toLowerCase() }, '', newUrl);
@@ -1707,7 +1834,6 @@
             playerHeader.classList.remove('hidden-header');
             hideTooltip();
             
-            // Remove o parâmetro da URL
             const newUrl = window.location.pathname;
             history.pushState({ playerOpen: false }, '', newUrl);
         }
@@ -1815,7 +1941,6 @@
             }
         }
 
-        // Limpa os intervalos quando a página for fechada
         window.addEventListener('beforeunload', () => {
             if (tooltipTimeout) clearTimeout(tooltipTimeout);
         });
