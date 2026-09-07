@@ -542,8 +542,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: #333;
             cursor: pointer;
@@ -933,11 +933,13 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
         let currentUser = null
+        let schedules = []
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
             if (user) {
                 currentUser = user
+                await loadUserSchedules()
                 updateUserInterface()
             }
         }
@@ -950,8 +952,32 @@
                 const { data: { user } } = await supabaseClient.auth.getUser()
                 if (user) {
                     currentUser = user
+                    await loadUserSchedules()
                     updateUserInterface()
                 }
+            }
+        }
+
+        async function loadUserSchedules() {
+            if (!currentUser) {
+                schedules = []
+                return
+            }
+            
+            const { data, error } = await supabaseClient
+                .from('schedules')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('start_timestamp')
+            
+            if (!error && data) {
+                schedules = data.map(s => ({
+                    id: s.id,
+                    channelIndex: s.channel_index,
+                    title: s.title,
+                    start_timestamp: s.start_timestamp,
+                    end_timestamp: s.end_timestamp
+                }))
             }
         }
 
@@ -1000,6 +1026,7 @@
             hideProfilePopup()
             await supabaseClient.auth.signOut()
             currentUser = null
+            schedules = []
             updateUserInterface()
         }
 
@@ -1469,7 +1496,6 @@
         let selectedBlockIndex = 0;
         let usingKeyboard = false;
         let blocksData = [];
-        let schedules = [];
         let popupTimeout = null;
         let popupProgressInterval = null;
         let tooltipTimeout = null;
@@ -1661,7 +1687,12 @@
             clearInterval(popupProgressInterval);
         }
 
-        function handleScheduleClick(channelIndex, blockIndex) {
+        async function handleScheduleClick(channelIndex, blockIndex) {
+            if (!currentUser) {
+                showLoginModal()
+                return
+            }
+            
             const blockData = blocksData.find(b => b.channelIndex === channelIndex && b.blockIndex === blockIndex);
             if (!blockData) return;
             
@@ -1688,15 +1719,25 @@
                     'Substituir agendamento?',
                     `${prog.title} às ${formatTime(prog.start_timestamp)}`,
                     'Substituir',
-                    () => {
-                        schedules = schedules.filter(s => s !== existingSchedule);
-                        schedules.push({
-                            channelIndex,
-                            title: prog.title,
-                            start_timestamp: prog.start_timestamp,
-                            end_timestamp: prog.end_timestamp
-                        });
-                        checkSchedules();
+                    async () => {
+                        await supabaseClient
+                            .from('schedules')
+                            .delete()
+                            .eq('id', existingSchedule.id)
+                        
+                        const { error: insertError } = await supabaseClient
+                            .from('schedules')
+                            .insert({
+                                user_id: currentUser.id,
+                                channel_index: channelIndex,
+                                title: prog.title,
+                                start_timestamp: prog.start_timestamp,
+                                end_timestamp: prog.end_timestamp
+                            })
+                        
+                        if (!insertError) {
+                            await loadUserSchedules()
+                        }
                     }
                 );
             } else {
@@ -1704,20 +1745,28 @@
                     'Agendar programação?',
                     `${prog.title} às ${formatTime(prog.start_timestamp)}`,
                     'Agendar',
-                    () => {
-                        schedules.push({
-                            channelIndex,
-                            title: prog.title,
-                            start_timestamp: prog.start_timestamp,
-                            end_timestamp: prog.end_timestamp
-                        });
-                        checkSchedules();
+                    async () => {
+                        const { error: insertError } = await supabaseClient
+                            .from('schedules')
+                            .insert({
+                                user_id: currentUser.id,
+                                channel_index: channelIndex,
+                                title: prog.title,
+                                start_timestamp: prog.start_timestamp,
+                                end_timestamp: prog.end_timestamp
+                            })
+                        
+                        if (!insertError) {
+                            await loadUserSchedules()
+                        }
                     }
                 );
             }
         }
 
         function checkSchedules() {
+            if (!currentUser) return
+            
             const now = Math.floor(Date.now() / 1000);
             
             schedules.forEach((schedule, index) => {
@@ -1730,13 +1779,21 @@
                         'Programação começando',
                         `${schedule.title} em ${channel?.name || ''}`,
                         'Assistir agora',
-                        () => {
+                        async () => {
                             openPlayerByIndex(schedule.channelIndex);
-                            schedules = schedules.filter(s => s !== schedule);
+                            await supabaseClient
+                                .from('schedules')
+                                .delete()
+                                .eq('id', schedule.id)
+                            await loadUserSchedules()
                         }
                     );
                 } else if (timeUntilStart <= -300) {
-                    schedules.splice(index, 1);
+                    supabaseClient
+                        .from('schedules')
+                        .delete()
+                        .eq('id', schedule.id)
+                        .then(() => loadUserSchedules())
                 }
             });
         }
