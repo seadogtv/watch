@@ -468,7 +468,6 @@
             display: none;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(5px);
         }
         .login-modal.show {
             display: flex;
@@ -518,6 +517,15 @@
         .login-error {
             background: #ffebee;
             color: #c62828;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
+            display: none;
+            border-radius: 4px;
+        }
+        .login-success {
+            background: #e8f5e9;
+            color: #2e7d32;
             padding: 0.5rem;
             font-size: 0.75rem;
             margin-bottom: 0.75rem;
@@ -638,6 +646,7 @@
             <p class="login-subtitle">Entre para acessar recursos exclusivos</p>
             
             <div class="login-error" id="loginError"></div>
+            <div class="login-success" id="loginSuccess"></div>
             
             <button class="google-btn" onclick="handleGoogleLogin()">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -675,11 +684,29 @@
             }
         }
 
+        // Verificar se há token na URL (após redirecionamento do OAuth)
+        async function handleAuthRedirect() {
+            const hash = window.location.hash
+            if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+                // Limpa a URL
+                window.history.replaceState(null, '', window.location.pathname)
+                
+                // Verifica a sessão novamente
+                const { data: { user } } = await supabaseClient.auth.getUser()
+                if (user) {
+                    currentUser = user
+                    updateUserInterface()
+                    showLoginSuccess('Login realizado com sucesso!')
+                }
+            }
+        }
+
         // Mostrar modal de login
         function showLoginModal() {
             document.getElementById('loginModal').classList.add('show')
             document.body.style.overflow = 'hidden'
             document.getElementById('loginError').style.display = 'none'
+            document.getElementById('loginSuccess').style.display = 'none'
         }
 
         // Fechar modal de login
@@ -687,6 +714,7 @@
             document.getElementById('loginModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('loginError').style.display = 'none'
+            document.getElementById('loginSuccess').style.display = 'none'
         }
 
         // Mostrar erro
@@ -694,6 +722,19 @@
             const errorEl = document.getElementById('loginError')
             errorEl.textContent = message
             errorEl.style.display = 'block'
+            document.getElementById('loginSuccess').style.display = 'none'
+        }
+
+        // Mostrar sucesso
+        function showLoginSuccess(message) {
+            const successEl = document.getElementById('loginSuccess')
+            successEl.textContent = message
+            successEl.style.display = 'block'
+            document.getElementById('loginError').style.display = 'none'
+            
+            setTimeout(() => {
+                successEl.style.display = 'none'
+            }, 3000)
         }
 
         // Login com Google
@@ -704,7 +745,7 @@
                 const { data, error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: window.location.origin + window.location.pathname
+                        redirectTo: window.location.origin + window.location.pathname + window.location.search
                     }
                 })
                 
@@ -777,8 +818,14 @@
             }
         })
 
+        // Mostrar interface inicial (ícone de login)
+        updateUserInterface()
+        
         // Inicializar verificação de login
         checkLogin()
+        
+        // Verificar redirecionamento de autenticação
+        handleAuthRedirect()
 
         const searchIcon = document.getElementById('searchIcon');
         const searchInput = document.getElementById('searchInput');
