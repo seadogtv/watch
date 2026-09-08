@@ -411,7 +411,7 @@
             border: none;
             padding: 1.25rem 1.5rem;
             min-width: 340px;
-            max-width: 520px;
+            max-width: 420px;
             display: none;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
@@ -823,21 +823,6 @@
             color: #c62828;
             display: block;
         }
-        .social-bar-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 45;
-            display: none;
-            justify-content: center;
-            background: #0f0f0f;
-            padding: 0.5rem;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
-        }
-        .social-bar-container.show {
-            display: flex;
-        }
         .banner-ad-container-sm {
             display: flex;
             justify-content: center;
@@ -892,9 +877,6 @@
         <div id="content"></div>
     </main>
 
-    <div id="socialBarContainer" class="social-bar-container">
-    </div>
-
     <div id="tooltip" class="programme-tooltip"></div>
 
     <div id="scheduleOverlay" class="schedule-overlay"></div>
@@ -906,7 +888,7 @@
         <div class="schedule-popup-progress">
             <div class="schedule-popup-progress-fill" id="schedulePopupProgress"></div>
         </div>
-        <div class="banner-ad-container-lg" id="scheduleBanner"></div>
+        <div class="banner-ad-container-lg" id="scheduleBanner" style="display: none;"></div>
     </div>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
@@ -950,7 +932,7 @@
                 </svg>
                 Entrar com Google
             </button>
-            <div class="banner-ad-container-sm" id="loginBanner"></div>
+            <div class="banner-ad-container-sm" id="loginBanner" style="display: none;"></div>
         </div>
     </div>
 
@@ -967,7 +949,7 @@
             <button class="giftcard-btn" onclick="handleRedeemGiftCard()">
                 Resgatar Gift Card
             </button>
-            <div class="banner-ad-container-sm" id="giftcardBanner"></div>
+            <div class="banner-ad-container-sm" id="giftcardBanner" style="display: none;"></div>
         </div>
     </div>
 
@@ -1067,35 +1049,16 @@
         }
 
         async function updateAdsVisibility() {
-            const socialBar = document.getElementById('socialBarContainer')
-            
             if (isPremiumUser) {
-                socialBar.classList.remove('show')
-                socialBar.innerHTML = ''
                 clearAllBanners()
-            } else {
-                socialBar.classList.add('show')
-                loadSocialBar()
             }
-        }
-
-        function loadSocialBar() {
-            const socialBarContainer = document.getElementById('socialBarContainer')
-            
-            if (socialBarContainer.innerHTML !== '') return
-            
-            socialBarContainer.innerHTML = ''
-            
-            const script1 = document.createElement('script')
-            script1.src = 'https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js'
-            
-            socialBarContainer.appendChild(script1)
         }
 
         function loadBanner320(bannerId) {
             const bannerContainer = document.getElementById(bannerId)
-            if (!bannerContainer) return
+            if (!bannerContainer || isPremiumUser) return
             
+            bannerContainer.style.display = 'flex'
             bannerContainer.innerHTML = ''
             
             const script1 = document.createElement('script')
@@ -1117,8 +1080,9 @@
 
         function loadBanner468(bannerId) {
             const bannerContainer = document.getElementById(bannerId)
-            if (!bannerContainer) return
+            if (!bannerContainer || isPremiumUser) return
             
+            bannerContainer.style.display = 'flex'
             bannerContainer.innerHTML = ''
             
             const script1 = document.createElement('script')
@@ -1142,6 +1106,7 @@
             const bannerContainer = document.getElementById(bannerId)
             if (bannerContainer) {
                 bannerContainer.innerHTML = ''
+                bannerContainer.style.display = 'none'
             }
         }
 
@@ -1510,12 +1475,6 @@
         updateAdsVisibility()
         checkLogin()
         handleAuthRedirect()
-
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                updateAdsVisibility()
-            }, 2000)
-        })
 
         const searchIcon = document.getElementById('searchIcon');
         const searchInput = document.getElementById('searchInput');
