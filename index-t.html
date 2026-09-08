@@ -411,7 +411,7 @@
             border: none;
             padding: 1.25rem 1.5rem;
             min-width: 340px;
-            max-width: 420px;
+            max-width: 520px;
             display: none;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
@@ -757,10 +757,9 @@
             border: none;
             padding: 2rem;
             width: 90%;
-            max-width: 500px;
+            max-width: 400px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
-            position: relative;
         }
         .giftcard-subtitle {
             font-size: 0.75rem;
@@ -839,7 +838,21 @@
         .social-bar-container.show {
             display: flex;
         }
-        .banner-ad-container {
+        .banner-ad-container-sm {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+            min-height: 50px;
+            width: 100%;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+            border-radius: 4px;
+            background: #1a1a1a;
+        }
+        .banner-ad-container-lg {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -852,12 +865,6 @@
             overflow: hidden;
             border-radius: 4px;
             background: #1a1a1a;
-        }
-        @media (max-width: 480px) {
-            .banner-ad-container {
-                max-width: 320px;
-                min-height: 50px;
-            }
         }
     </style>
 </head>
@@ -899,6 +906,7 @@
         <div class="schedule-popup-progress">
             <div class="schedule-popup-progress-fill" id="schedulePopupProgress"></div>
         </div>
+        <div class="banner-ad-container-lg" id="scheduleBanner"></div>
     </div>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
@@ -942,6 +950,7 @@
                 </svg>
                 Entrar com Google
             </button>
+            <div class="banner-ad-container-sm" id="loginBanner"></div>
         </div>
     </div>
 
@@ -958,8 +967,7 @@
             <button class="giftcard-btn" onclick="handleRedeemGiftCard()">
                 Resgatar Gift Card
             </button>
-            <div class="banner-ad-container" id="giftcardBanner">
-            </div>
+            <div class="banner-ad-container-sm" id="giftcardBanner"></div>
         </div>
     </div>
 
@@ -1058,6 +1066,7 @@
             if (isPremiumUser) {
                 socialBar.classList.remove('show')
                 socialBar.innerHTML = ''
+                clearAllBanners()
             } else {
                 socialBar.classList.add('show')
                 loadSocialBar()
@@ -1077,16 +1086,80 @@
             socialBarContainer.appendChild(script1)
         }
 
+        function loadBanner320(bannerId) {
+            const bannerContainer = document.getElementById(bannerId)
+            if (!bannerContainer) return
+            
+            bannerContainer.innerHTML = ''
+            
+            const script1 = document.createElement('script')
+            script1.textContent = `
+                atOptions = {
+                    'key' : '03ad0caeda3b785cc8ef31e70f215600',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                };
+            `
+            const script2 = document.createElement('script')
+            script2.src = 'https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js'
+            
+            bannerContainer.appendChild(script1)
+            bannerContainer.appendChild(script2)
+        }
+
+        function loadBanner468(bannerId) {
+            const bannerContainer = document.getElementById(bannerId)
+            if (!bannerContainer) return
+            
+            bannerContainer.innerHTML = ''
+            
+            const script1 = document.createElement('script')
+            script1.textContent = `
+                atOptions = {
+                    'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            `
+            const script2 = document.createElement('script')
+            script2.src = 'https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js'
+            
+            bannerContainer.appendChild(script1)
+            bannerContainer.appendChild(script2)
+        }
+
+        function clearBanner(bannerId) {
+            const bannerContainer = document.getElementById(bannerId)
+            if (bannerContainer) {
+                bannerContainer.innerHTML = ''
+            }
+        }
+
+        function clearAllBanners() {
+            clearBanner('loginBanner')
+            clearBanner('giftcardBanner')
+            clearBanner('scheduleBanner')
+        }
+
         function showLoginModal() {
             document.getElementById('loginModal').classList.add('show')
             document.body.style.overflow = 'hidden'
             document.getElementById('loginError').style.display = 'none'
+            
+            if (!isPremiumUser) {
+                loadBanner320('loginBanner')
+            }
         }
 
         function closeLoginModal() {
             document.getElementById('loginModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('loginError').style.display = 'none'
+            clearBanner('loginBanner')
         }
 
         function showLoginError(message) {
@@ -1138,7 +1211,11 @@
             document.body.style.overflow = 'hidden'
             document.getElementById('giftcardMessage').className = 'giftcard-message'
             document.getElementById('giftcardInput').value = ''
-            loadBannerAd()
+            
+            if (!isPremiumUser) {
+                loadBanner320('giftcardBanner')
+            }
+            
             setTimeout(() => document.getElementById('giftcardInput').focus(), 100)
         }
 
@@ -1146,48 +1223,7 @@
             document.getElementById('giftcardModal').classList.remove('show')
             document.body.style.overflow = ''
             document.getElementById('giftcardMessage').className = 'giftcard-message'
-            document.getElementById('giftcardBanner').innerHTML = ''
-        }
-
-        function loadBannerAd() {
-            const bannerContainer = document.getElementById('giftcardBanner')
-            const isMobile = window.innerWidth <= 480
-            
-            bannerContainer.innerHTML = ''
-            
-            if (isMobile) {
-                const script1 = document.createElement('script')
-                script1.textContent = `
-                    atOptions = {
-                        'key' : '03ad0caeda3b785cc8ef31e70f215600',
-                        'format' : 'iframe',
-                        'height' : 50,
-                        'width' : 320,
-                        'params' : {}
-                    };
-                `
-                const script2 = document.createElement('script')
-                script2.src = 'https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js'
-                
-                bannerContainer.appendChild(script1)
-                bannerContainer.appendChild(script2)
-            } else {
-                const script1 = document.createElement('script')
-                script1.textContent = `
-                    atOptions = {
-                        'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
-                        'format' : 'iframe',
-                        'height' : 60,
-                        'width' : 468,
-                        'params' : {}
-                    };
-                `
-                const script2 = document.createElement('script')
-                script2.src = 'https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js'
-                
-                bannerContainer.appendChild(script1)
-                bannerContainer.appendChild(script2)
-            }
+            clearBanner('giftcardBanner')
         }
 
         function showGiftCardMessage(message, type) {
@@ -1770,6 +1806,10 @@
             document.getElementById('scheduleOverlay').classList.add('show');
             schedulePopupProgress.style.width = '100%';
             
+            if (!isPremiumUser) {
+                loadBanner468('scheduleBanner')
+            }
+            
             clearTimeout(popupTimeout);
             clearInterval(popupProgressInterval);
             
@@ -1803,6 +1843,7 @@
             document.getElementById('scheduleOverlay').classList.remove('show');
             clearTimeout(popupTimeout);
             clearInterval(popupProgressInterval);
+            clearBanner('scheduleBanner')
         }
 
         async function handleScheduleClick(channelIndex, blockIndex) {
