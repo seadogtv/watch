@@ -10,7 +10,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js"></script>
-    <script src="https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
@@ -982,13 +981,17 @@
         let touchEndX = 0
         let touchEndY = 0
         let isSwiping = false
+        let isPremiumUser = false
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
             if (user) {
                 currentUser = user
                 await loadUserSchedules()
+                await checkPremiumStatus()
                 updateUserInterface()
+                updateAdsVisibility()
+            } else {
                 updateAdsVisibility()
             }
         }
@@ -1002,6 +1005,7 @@
                 if (user) {
                     currentUser = user
                     await loadUserSchedules()
+                    await checkPremiumStatus()
                     updateUserInterface()
                     updateAdsVisibility()
                 }
@@ -1031,8 +1035,10 @@
             }
         }
 
-        async function isUserPremium() {
-            if (!currentUser) return false
+        async function checkPremiumStatus() {
+            isPremiumUser = false
+            
+            if (!currentUser) return
             
             const { data: subscription } = await supabaseClient
                 .from('premium_subscriptions')
@@ -1041,28 +1047,34 @@
                 .single()
             
             if (subscription) {
-                return subscription.is_lifetime || 
+                isPremiumUser = subscription.is_lifetime || 
                     (subscription.expires_at && new Date(subscription.expires_at) > new Date())
             }
-            
-            return false
         }
 
         async function updateAdsVisibility() {
             const socialBar = document.getElementById('socialBarContainer')
             
-            if (!currentUser) {
-                socialBar.classList.add('show')
-                return
-            }
-            
-            const premium = await isUserPremium()
-            
-            if (premium) {
+            if (isPremiumUser) {
                 socialBar.classList.remove('show')
+                socialBar.innerHTML = ''
             } else {
                 socialBar.classList.add('show')
+                loadSocialBar()
             }
+        }
+
+        function loadSocialBar() {
+            const socialBarContainer = document.getElementById('socialBarContainer')
+            
+            if (socialBarContainer.innerHTML !== '') return
+            
+            socialBarContainer.innerHTML = ''
+            
+            const script1 = document.createElement('script')
+            script1.src = 'https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js'
+            
+            socialBarContainer.appendChild(script1)
         }
 
         function showLoginModal() {
@@ -1110,6 +1122,7 @@
             hideProfilePopup()
             await supabaseClient.auth.signOut()
             currentUser = null
+            isPremiumUser = false
             schedules = []
             updateUserInterface()
             updateAdsVisibility()
@@ -1223,6 +1236,7 @@
                         showGiftCardMessage(result.message, 'success')
                     }
                     document.getElementById('giftcardInput').value = ''
+                    await checkPremiumStatus()
                     updateUserInterface()
                     updateAdsVisibility()
                 } else {
@@ -1357,54 +1371,22 @@
                 searchContainer.appendChild(loginIcon)
             }
             
-            checkPremiumStatus()
-        }
-
-        async function checkPremiumStatus() {
-            if (!currentUser) {
-                return
+            if (!isPremiumUser && currentUser) {
+                const premiumIconBtn = document.createElement('div')
+                premiumIconBtn.className = 'premium-icon-btn'
+                premiumIconBtn.onclick = showGiftCardModal
+                premiumIconBtn.title = 'Resgatar Gift Card'
+                premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
+                searchContainer.appendChild(premiumIconBtn)
             }
-            
-            const { data: subscription, error } = await supabaseClient
-                .from('premium_subscriptions')
-                .select('is_lifetime, expires_at')
-                .eq('user_id', currentUser.id)
-                .single()
             
             const userBadge = document.querySelector('.user-badge')
-            
-            if (subscription && subscription.is_lifetime) {
-                if (userBadge) {
+            if (userBadge) {
+                if (isPremiumUser) {
                     userBadge.classList.add('lifetime')
+                } else if (currentUser) {
+                    userBadge.classList.add('free')
                 }
-                return
-            }
-            
-            if (subscription && subscription.expires_at) {
-                const expiryDate = new Date(subscription.expires_at)
-                const now = new Date()
-                
-                if (expiryDate > now) {
-                    if (userBadge) {
-                        userBadge.classList.add('premium')
-                    }
-                    return
-                }
-            }
-            
-            if (userBadge) {
-                userBadge.classList.add('free')
-            }
-            
-            const premiumIconBtn = document.createElement('div')
-            premiumIconBtn.className = 'premium-icon-btn'
-            premiumIconBtn.onclick = showGiftCardModal
-            premiumIconBtn.title = 'Resgatar Gift Card'
-            premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
-            
-            const searchContainer = document.getElementById('searchContainer')
-            if (userBadge) {
-                searchContainer.insertBefore(premiumIconBtn, userBadge)
             }
         }
 
