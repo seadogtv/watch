@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js"></script>
+    <script src="https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
@@ -990,6 +990,7 @@
         let touchEndY = 0
         let isSwiping = false
         let isPremiumUser = false
+        let popunderOpened = false
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
@@ -1055,8 +1056,13 @@
                 .single()
             
             if (subscription) {
-                isPremiumUser = subscription.is_lifetime || 
-                    (subscription.expires_at && new Date(subscription.expires_at) > new Date())
+                if (subscription.is_lifetime) {
+                    isPremiumUser = 'lifetime'
+                } else if (subscription.expires_at && new Date(subscription.expires_at) > new Date()) {
+                    isPremiumUser = 'premium'
+                } else {
+                    isPremiumUser = false
+                }
             }
         }
 
@@ -1143,6 +1149,19 @@
             clearBanner('loginBanner')
             clearBanner('giftcardBanner')
             clearBanner('scheduleBanner')
+        }
+
+        function openPopunder() {
+            if (isPremiumUser) return
+            
+            if (popunderOpened) return
+            
+            popunderOpened = true
+            
+            setTimeout(() => {
+                window.open('https://www.profitableratecpmnetwork.com/zjfzugtrct?key=3c946172ea68754419b9ef5309b311f8', '_blank')
+                popunderOpened = false
+            }, 1000)
         }
 
         function showLoginModal() {
@@ -1301,23 +1320,20 @@
             
             let premiumTag = ''
             
-            const { data: subscription, error: subError } = await supabaseClient
-                .from('premium_subscriptions')
-                .select('is_lifetime, expires_at')
-                .eq('user_id', currentUser.id)
-                .single()
-            
-            if (subscription && subscription.is_lifetime) {
+            if (isPremiumUser === 'lifetime') {
                 premiumTag = '<span class="premium-tag lifetime">Vitalício</span>'
-            } else if (subscription && subscription.expires_at) {
-                const expiryDate = new Date(subscription.expires_at)
-                const now = new Date()
+            } else if (isPremiumUser === 'premium') {
+                const { data: subscription } = await supabaseClient
+                    .from('premium_subscriptions')
+                    .select('is_lifetime, expires_at')
+                    .eq('user_id', currentUser.id)
+                    .single()
                 
-                if (expiryDate > now) {
+                if (subscription && subscription.expires_at) {
+                    const expiryDate = new Date(subscription.expires_at)
+                    const now = new Date()
                     const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
                     premiumTag = `<span class="premium-tag premium">${daysRemaining} dias</span>`
-                } else {
-                    premiumTag = '<span class="premium-tag free">Gratuito</span>'
                 }
             } else {
                 premiumTag = '<span class="premium-tag free">Gratuito</span>'
@@ -1367,6 +1383,15 @@
             if (existingIcon) existingIcon.remove()
             if (existingPremiumIcon) existingPremiumIcon.remove()
             
+            if (currentUser && !isPremiumUser) {
+                const premiumIconBtn = document.createElement('div')
+                premiumIconBtn.className = 'premium-icon-btn'
+                premiumIconBtn.onclick = showGiftCardModal
+                premiumIconBtn.title = 'Resgatar Gift Card'
+                premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
+                searchContainer.appendChild(premiumIconBtn)
+            }
+            
             if (currentUser) {
                 const userBadge = document.createElement('div')
                 userBadge.className = 'user-badge'
@@ -1396,6 +1421,14 @@
                     userBadge.appendChild(avatar)
                 }
                 
+                if (isPremiumUser === 'lifetime') {
+                    userBadge.classList.add('lifetime')
+                } else if (isPremiumUser === 'premium') {
+                    userBadge.classList.add('premium')
+                } else {
+                    userBadge.classList.add('free')
+                }
+                
                 searchContainer.appendChild(userBadge)
             } else {
                 const loginIcon = document.createElement('div')
@@ -1405,24 +1438,6 @@
                 loginIcon.innerHTML = '<i class="fa-solid fa-user"></i>'
                 
                 searchContainer.appendChild(loginIcon)
-            }
-            
-            if (!isPremiumUser && currentUser) {
-                const premiumIconBtn = document.createElement('div')
-                premiumIconBtn.className = 'premium-icon-btn'
-                premiumIconBtn.onclick = showGiftCardModal
-                premiumIconBtn.title = 'Resgatar Gift Card'
-                premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
-                searchContainer.appendChild(premiumIconBtn)
-            }
-            
-            const userBadge = document.querySelector('.user-badge')
-            if (userBadge) {
-                if (isPremiumUser) {
-                    userBadge.classList.add('lifetime')
-                } else if (currentUser) {
-                    userBadge.classList.add('free')
-                }
             }
         }
 
@@ -1599,6 +1614,7 @@
                     if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
                         const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
                         if (blockData && (blockData.isNow || blockData.isEmpty)) {
+                            openPopunder()
                             openPlayerByIndex(selectedChannelIndex);
                         } else if (blockData) {
                             handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
@@ -1856,6 +1872,7 @@
             if (!blockData) return;
             
             if (blockData.isNow) {
+                openPopunder()
                 openPlayerByIndex(channelIndex);
                 return;
             }
@@ -1939,6 +1956,7 @@
                         `${schedule.title} em ${channel?.name || ''}`,
                         'Assistir agora',
                         async () => {
+                            openPopunder()
                             openPlayerByIndex(schedule.channelIndex);
                             await supabaseClient
                                 .from('schedules')
@@ -2198,7 +2216,7 @@
                 
                 channelListHtml += `
                     <div class="guide-channel-item" 
-                         onclick='openPlayerByIndex(${channelIndex})' 
+                         onclick='openPopunder(); openPlayerByIndex(${channelIndex})' 
                          onmouseenter='handleChannelHover(this, ${channelIndex})'
                          onmouseleave='handleChannelLeave()'>
                         <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
@@ -2219,7 +2237,7 @@
                         rowHtml += `
                             <div class="guide-programme-block guide-programme-empty" 
                                  style="width: ${width}px; min-width: ${width}px;"
-                                 onclick='openPlayerByIndex(${channelIndex})'
+                                 onclick='openPopunder(); openPlayerByIndex(${channelIndex})'
                                  onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
                                  onmouseleave='handleBlockLeave()'>
                             </div>
@@ -2258,7 +2276,7 @@
                     const isFuture = blockStart > nowTimestamp;
                     
                     const clickHandler = isNow 
-                        ? `onclick='openPlayerByIndex(${channelIndex})'` 
+                        ? `onclick='openPopunder(); openPlayerByIndex(${channelIndex})'` 
                         : isFuture 
                             ? `onclick='handleScheduleClick(${channelIndex}, ${blockIndex})'` 
                             : '';
@@ -2323,7 +2341,10 @@
                 const channelSlug = channelParam.toLowerCase();
                 const channelIndex = flatChannels.findIndex(c => (c.slug || c.name || '').toLowerCase() === channelSlug);
                 if (channelIndex >= 0) {
-                    setTimeout(() => openPlayerByIndex(channelIndex), 500);
+                    setTimeout(() => {
+                        openPopunder()
+                        openPlayerByIndex(channelIndex)
+                    }, 500);
                 }
             }
         }
