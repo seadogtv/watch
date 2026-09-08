@@ -412,6 +412,7 @@
             padding: 1.25rem 1.5rem;
             min-width: 340px;
             max-width: 420px;
+            width: auto;
             display: none;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
@@ -500,6 +501,7 @@
             padding: 2rem;
             width: 90%;
             max-width: 360px;
+            min-width: 320px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
@@ -758,6 +760,7 @@
             padding: 2rem;
             width: 90%;
             max-width: 400px;
+            min-width: 320px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
@@ -824,7 +827,7 @@
             display: block;
         }
         .banner-ad-container-sm {
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             margin-top: 1rem;
@@ -838,7 +841,7 @@
             background: #1a1a1a;
         }
         .banner-ad-container-lg {
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             margin-top: 1rem;
@@ -888,7 +891,7 @@
         <div class="schedule-popup-progress">
             <div class="schedule-popup-progress-fill" id="schedulePopupProgress"></div>
         </div>
-        <div class="banner-ad-container-lg" id="scheduleBanner" style="display: none;"></div>
+        <div class="banner-ad-container-lg" id="scheduleBanner"></div>
     </div>
 
     <div id="player" class="fixed inset-0 z-50 hidden bg-black">
@@ -932,7 +935,7 @@
                 </svg>
                 Entrar com Google
             </button>
-            <div class="banner-ad-container-sm" id="loginBanner" style="display: none;"></div>
+            <div class="banner-ad-container-sm" id="loginBanner"></div>
         </div>
     </div>
 
@@ -949,7 +952,7 @@
             <button class="giftcard-btn" onclick="handleRedeemGiftCard()">
                 Resgatar Gift Card
             </button>
-            <div class="banner-ad-container-sm" id="giftcardBanner" style="display: none;"></div>
+            <div class="banner-ad-container-sm" id="giftcardBanner"></div>
         </div>
     </div>
 
@@ -984,6 +987,7 @@
                 updateAdsVisibility()
             } else {
                 updateAdsVisibility()
+                openPopunderOnce()
             }
         }
 
@@ -1001,6 +1005,16 @@
                     updateAdsVisibility()
                 }
             }
+        }
+
+        function openPopunderOnce() {
+            if (isPremiumUser || popunderOpened) return
+            
+            popunderOpened = true
+            
+            setTimeout(() => {
+                window.open('https://www.profitableratecpmnetwork.com/zjfzugtrct?key=3c946172ea68754419b9ef5309b311f8', '_blank')
+            }, 2000)
         }
 
         async function loadUserSchedules() {
@@ -1114,19 +1128,6 @@
             clearBanner('loginBanner')
             clearBanner('giftcardBanner')
             clearBanner('scheduleBanner')
-        }
-
-        function openPopunder() {
-            if (isPremiumUser) return
-            
-            if (popunderOpened) return
-            
-            popunderOpened = true
-            
-            setTimeout(() => {
-                window.open('https://www.profitableratecpmnetwork.com/zjfzugtrct?key=3c946172ea68754419b9ef5309b311f8', '_blank')
-                popunderOpened = false
-            }, 1000)
         }
 
         function showLoginModal() {
@@ -1573,7 +1574,6 @@
                     if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
                         const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
                         if (blockData && (blockData.isNow || blockData.isEmpty)) {
-                            openPopunder()
                             openPlayerByIndex(selectedChannelIndex);
                         } else if (blockData) {
                             handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
@@ -1831,7 +1831,6 @@
             if (!blockData) return;
             
             if (blockData.isNow) {
-                openPopunder()
                 openPlayerByIndex(channelIndex);
                 return;
             }
@@ -1915,7 +1914,6 @@
                         `${schedule.title} em ${channel?.name || ''}`,
                         'Assistir agora',
                         async () => {
-                            openPopunder()
                             openPlayerByIndex(schedule.channelIndex);
                             await supabaseClient
                                 .from('schedules')
@@ -2175,7 +2173,7 @@
                 
                 channelListHtml += `
                     <div class="guide-channel-item" 
-                         onclick='openPopunder(); openPlayerByIndex(${channelIndex})' 
+                         onclick='openPlayerByIndex(${channelIndex})' 
                          onmouseenter='handleChannelHover(this, ${channelIndex})'
                          onmouseleave='handleChannelLeave()'>
                         <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
@@ -2196,7 +2194,7 @@
                         rowHtml += `
                             <div class="guide-programme-block guide-programme-empty" 
                                  style="width: ${width}px; min-width: ${width}px;"
-                                 onclick='openPopunder(); openPlayerByIndex(${channelIndex})'
+                                 onclick='openPlayerByIndex(${channelIndex})'
                                  onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
                                  onmouseleave='handleBlockLeave()'>
                             </div>
@@ -2235,7 +2233,7 @@
                     const isFuture = blockStart > nowTimestamp;
                     
                     const clickHandler = isNow 
-                        ? `onclick='openPopunder(); openPlayerByIndex(${channelIndex})'` 
+                        ? `onclick='openPlayerByIndex(${channelIndex})'` 
                         : isFuture 
                             ? `onclick='handleScheduleClick(${channelIndex}, ${blockIndex})'` 
                             : '';
@@ -2300,10 +2298,7 @@
                 const channelSlug = channelParam.toLowerCase();
                 const channelIndex = flatChannels.findIndex(c => (c.slug || c.name || '').toLowerCase() === channelSlug);
                 if (channelIndex >= 0) {
-                    setTimeout(() => {
-                        openPopunder()
-                        openPlayerByIndex(channelIndex)
-                    }, 500);
+                    setTimeout(() => openPlayerByIndex(channelIndex), 500);
                 }
             }
         }
