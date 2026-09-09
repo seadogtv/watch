@@ -277,14 +277,14 @@
             object-fit: contain;
         }
         .guide-channel-item.fake-channel {
-            background: #141414;
+            background: #0d0d0d;
             cursor: default;
         }
         .guide-channel-item.fake-channel:hover {
-            background: #141414;
+            background: #0d0d0d;
         }
         .guide-channel-item.fake-channel.selected {
-            background: #1e1e1e;
+            background: #0d0d0d;
         }
         .guide-programmes {
             flex-shrink: 0;
@@ -363,27 +363,29 @@
         .fake-programme-row {
             display: flex;
             height: 56px;
-            background: #141414;
+            background: #0d0d0d;
         }
         .fake-programme-block {
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #141414;
+            justify-content: flex-start;
+            background: #0d0d0d;
             box-sizing: border-box;
             border-right: 2px solid #0a0a0a;
             flex-shrink: 0;
             overflow: hidden;
+            padding: 0;
         }
         .fake-banner-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             width: 320px;
             height: 50px;
             overflow: hidden;
             background: #1a1a1a;
             border-radius: 4px;
+            margin-left: 0.5rem;
         }
         .programme-tooltip {
             position: fixed;
@@ -2126,11 +2128,8 @@
             
             renderList.forEach((item, renderIndex) => {
                 if (item.type === 'fake') {
-                    const siteIcon = getProxiedLogo(SITE_ICON_URL);
-                    
                     channelListHtml += `
                         <div class="guide-channel-item fake-channel" data-render-index="${renderIndex}">
-                            <img src="${siteIcon}" alt="ad">
                         </div>
                     `;
                     
