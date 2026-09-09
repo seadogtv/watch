@@ -369,12 +369,14 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
+            gap: 0.75rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
             background: #0d0d0d;
             box-sizing: border-box;
             border-right: 2px solid #0a0a0a;
             flex-shrink: 0;
             overflow: hidden;
-            padding: 0;
         }
         .fake-banner-container {
             display: flex;
@@ -385,7 +387,7 @@
             overflow: hidden;
             background: #1a1a1a;
             border-radius: 4px;
-            margin-left: 0.5rem;
+            flex-shrink: 0;
         }
         .programme-tooltip {
             position: fixed;
@@ -1542,6 +1544,7 @@
         let popupTimeout = null;
         let popupProgressInterval = null;
         let tooltipTimeout = null;
+        let fakeBannerIds = [];
 
         const genreLabels = {
             'general': 'Geral',
@@ -2035,9 +2038,20 @@
                 if (countSinceLastFake >= 5) {
                     countSinceLastFake = 0;
                     if (Math.random() < 0.5) {
-                        const fakeId = 'fake_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 5);
-                        result.push({ type: 'fake', channelIndex: null, fakeId: fakeId });
-                        fakeIds.push(fakeId);
+                        const fakeBaseId = 'fake_' + Date.now() + '_' + idx;
+                        const bannerCount = 2 + Math.floor(Math.random() * 3); // 2 a 4 banners
+                        const bannerIds = [];
+                        for (let i = 0; i < bannerCount; i++) {
+                            const bid = fakeBaseId + '_' + i + '_' + Math.random().toString(36).substr(2, 5);
+                            bannerIds.push(bid);
+                        }
+                        result.push({ 
+                            type: 'fake', 
+                            channelIndex: null, 
+                            fakeId: fakeBaseId,
+                            bannerIds: bannerIds
+                        });
+                        fakeIds.push(...bannerIds);
                     }
                 }
             });
@@ -2122,6 +2136,7 @@
             guideEndTimestamp = guideStartTimestamp + totalHours * 3600;
             
             blocksData = [];
+            fakeBannerIds = [];
             
             const nowTimestamp = Math.floor(Date.now() / 1000);
             const totalGuideWidth = totalHours * HOUR_WIDTH;
@@ -2133,10 +2148,16 @@
                         </div>
                     `;
                     
+                    let bannersHtml = '';
+                    (item.bannerIds || []).forEach(bid => {
+                        bannersHtml += `<div class="fake-banner-container" id="${bid}"></div>`;
+                        fakeBannerIds.push(bid);
+                    });
+                    
                     programmesHtml += `
                         <div class="fake-programme-row" data-render-index="${renderIndex}">
                             <div class="fake-programme-block" style="width: ${totalGuideWidth}px; min-width: ${totalGuideWidth}px;">
-                                <div class="fake-banner-container" id="${item.fakeId}"></div>
+                                ${bannersHtml}
                             </div>
                         </div>
                     `;
@@ -2265,8 +2286,8 @@
                 </div>
             `;
             
-            fakeIds.forEach(fakeId => {
-                loadFakeChannelBanner(fakeId);
+            fakeBannerIds.forEach(bid => {
+                loadFakeChannelBanner(bid);
             });
             
             updateNowLine();
