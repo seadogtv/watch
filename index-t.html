@@ -8,7 +8,6 @@
     <link rel="icon" type="image/png" href="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/icon-d.png" media="(prefers-color-scheme: light)">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="text/javascript" src="https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
@@ -276,15 +275,13 @@
             height: 36px;
             object-fit: contain;
         }
+        /* Linha de canal fake (anúncio) na coluna esquerda - vazia */
         .guide-channel-item.fake-channel {
-            background: #0d0d0d;
+            background: #0a0a0a;
             cursor: default;
         }
         .guide-channel-item.fake-channel:hover {
-            background: #0d0d0d;
-        }
-        .guide-channel-item.fake-channel.selected {
-            background: #0d0d0d;
+            background: #0a0a0a;
         }
         .guide-programmes {
             flex-shrink: 0;
@@ -360,34 +357,74 @@
             z-index: 10;
             pointer-events: none;
         }
+        /* Banner na grade */
         .fake-programme-row {
             display: flex;
             height: 56px;
-            background: #0d0d0d;
+            background: #0a0a0a;
         }
         .fake-programme-block {
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            gap: 0.75rem;
             padding-left: 0.5rem;
-            padding-right: 0.5rem;
-            background: #0d0d0d;
+            background: #0a0a0a;
             box-sizing: border-box;
             border-right: 2px solid #0a0a0a;
             flex-shrink: 0;
             overflow: hidden;
         }
-        .fake-banner-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
+        .ad-slot-small {
             width: 320px;
             height: 50px;
-            overflow: hidden;
-            background: #1a1a1a;
+            background: #0d0d0d;
+            border: 1px solid #1a1a1a;
             border-radius: 4px;
+            overflow: hidden;
             flex-shrink: 0;
+        }
+        .ad-slot-small iframe {
+            width: 320px;
+            height: 50px;
+            border: none;
+            display: block;
+        }
+        /* Banner no player (apenas free users) */
+        #playerAdBanner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(8px);
+            padding: 6px 0;
+            border-top: 1px solid #1a1a1a;
+            pointer-events: auto;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #playerAdBanner.visible {
+            display: flex;
+        }
+        #playerAdBanner.hidden-banner {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        .ad-slot-large {
+            width: 468px;
+            height: 60px;
+            background: #0d0d0d;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .ad-slot-large iframe {
+            width: 468px;
+            height: 60px;
+            border: none;
+            display: block;
         }
         .programme-tooltip {
             position: fixed;
@@ -450,7 +487,6 @@
             padding: 1.25rem 1.5rem;
             min-width: 340px;
             max-width: 420px;
-            width: auto;
             display: none;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
@@ -539,7 +575,6 @@
             padding: 2rem;
             width: 90%;
             max-width: 360px;
-            min-width: 320px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
@@ -798,7 +833,6 @@
             padding: 2rem;
             width: 90%;
             max-width: 400px;
-            min-width: 320px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
@@ -926,6 +960,10 @@
                     </div>
                 </div>
             </div>
+            <!-- Banner 468x60 no player - apenas free users -->
+            <div id="playerAdBanner">
+                <div class="ad-slot-large" id="playerAdSlot"></div>
+            </div>
         </div>
     </div>
 
@@ -974,7 +1012,126 @@
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-        const SITE_ICON_URL = 'https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/icon-original.png';
+        // =====================
+        // SISTEMA DE ANÚNCIOS
+        // =====================
+        const ADS_CONFIG = {
+            popunder: {
+                // só dispara 1x por sessão
+                sessionKey: 'seadog_popunder_fired',
+                url: 'https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js'
+            },
+            socialBar: {
+                url: 'https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js'
+            },
+            bannerSmall: {
+                // 320x50 na grade (entre canais)
+                config: { key: '03ad0caeda3b785cc8ef31e70f215600', format: 'iframe', height: 50, width: 320 },
+                invokeUrl: 'https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js'
+            },
+            bannerLarge: {
+                // 468x60 no rodapé do player
+                config: { key: '6bbd42b0f7510ea5daa0cf8f14cf4b7c', format: 'iframe', height: 60, width: 468 },
+                invokeUrl: 'https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js'
+            }
+        };
+
+        let isPremiumUser = false;
+        let adsInitialized = { socialBar: false, popunder: false, playerAd: false };
+
+        // Carrega a social bar injetando o script (apenas free users)
+        function loadSocialBar() {
+            if (adsInitialized.socialBar || isPremiumUser) return;
+            adsInitialized.socialBar = true;
+            const s = document.createElement('script');
+            s.src = ADS_CONFIG.socialBar.url;
+            s.async = true;
+            document.body.appendChild(s);
+        }
+
+        // Dispara popunder no primeiro clique (apenas free users, 1x por sessão)
+        function setupPopunder() {
+            if (adsInitialized.popunder || isPremiumUser) return;
+            if (sessionStorage.getItem(ADS_CONFIG.popunder.sessionKey)) return;
+            
+            adsInitialized.popunder = true;
+            
+            const trigger = () => {
+                if (isPremiumUser) return;
+                if (sessionStorage.getItem(ADS_CONFIG.popunder.sessionKey)) return;
+                sessionStorage.setItem(ADS_CONFIG.popunder.sessionKey, '1');
+                
+                const s = document.createElement('script');
+                s.src = ADS_CONFIG.popunder.url;
+                s.async = true;
+                document.body.appendChild(s);
+                
+                // Remove listener após disparar
+                document.removeEventListener('click', trigger);
+            };
+            
+            // Usa setTimeout para não disparar imediatamente, só em interação real
+            setTimeout(() => {
+                document.addEventListener('click', trigger, { once: true });
+            }, 3000);
+        }
+
+        // Carrega banner em iframe isolado (resolve problema de múltiplas instâncias do Adsterra)
+        function loadAdIntoIframe(containerId, config, invokeUrl) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const iframe = document.createElement('iframe');
+            iframe.setAttribute('frameborder', '0');
+            iframe.setAttribute('scrolling', 'no');
+            iframe.style.width = config.width + 'px';
+            iframe.style.height = config.height + 'px';
+            iframe.style.border = 'none';
+            iframe.style.display = 'block';
+            
+            // srcdoc cria um documento isolado - cada banner tem seu próprio contexto
+            iframe.srcdoc = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { margin: 0; padding: 0; background: #0d0d0d; overflow: hidden; }
+                    </style>
+                </head>
+                <body>
+                    <script>
+                        window.atOptions = ${JSON.stringify(config)};
+                    </scr` + `ipt>
+                    <script src="${invokeUrl}"></scr` + `ipt>
+                </body>
+                </html>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(iframe);
+        }
+
+        // Carrega o banner 468x60 no rodapé do player
+        function loadPlayerAd() {
+            if (adsInitialized.playerAd || isPremiumUser) return;
+            adsInitialized.playerAd = true;
+            loadAdIntoIframe('playerAdSlot', ADS_CONFIG.bannerLarge.config, ADS_CONFIG.bannerLarge.invokeUrl);
+        }
+
+        function showPlayerAdBanner() {
+            const banner = document.getElementById('playerAdBanner');
+            if (!banner || isPremiumUser) return;
+            loadPlayerAd();
+            banner.classList.add('visible');
+        }
+
+        function hidePlayerAdBanner() {
+            const banner = document.getElementById('playerAdBanner');
+            if (!banner) return;
+            banner.classList.remove('visible');
+        }
+        // =====================
 
         let currentUser = null
         let schedules = []
@@ -983,7 +1140,6 @@
         let touchEndX = 0
         let touchEndY = 0
         let isSwiping = false
-        let isPremiumUser = false
 
         async function checkLogin() {
             const { data: { user } } = await supabaseClient.auth.getUser()
@@ -992,6 +1148,11 @@
                 await loadUserSchedules()
                 await checkPremiumStatus()
                 updateUserInterface()
+            } else {
+                // Usuário não logado é tratado como free
+                isPremiumUser = false;
+                setupPopunder();
+                loadSocialBar();
             }
         }
 
@@ -1030,28 +1191,6 @@
                     start_timestamp: s.start_timestamp,
                     end_timestamp: s.end_timestamp
                 }))
-            }
-        }
-
-        async function checkPremiumStatus() {
-            isPremiumUser = false
-            
-            if (!currentUser) return
-            
-            const { data: subscription } = await supabaseClient
-                .from('premium_subscriptions')
-                .select('is_lifetime, expires_at')
-                .eq('user_id', currentUser.id)
-                .single()
-            
-            if (subscription) {
-                if (subscription.is_lifetime) {
-                    isPremiumUser = 'lifetime'
-                } else if (subscription.expires_at && new Date(subscription.expires_at) > new Date()) {
-                    isPremiumUser = 'premium'
-                } else {
-                    isPremiumUser = false
-                }
             }
         }
 
@@ -1102,6 +1241,10 @@
             currentUser = null
             isPremiumUser = false
             schedules = []
+            // Ao sair, ativa sistema de ads novamente
+            setupPopunder();
+            loadSocialBar();
+            renderGuide();
             updateUserInterface()
         }
 
@@ -1115,7 +1258,6 @@
             document.body.style.overflow = 'hidden'
             document.getElementById('giftcardMessage').className = 'giftcard-message'
             document.getElementById('giftcardInput').value = ''
-            
             setTimeout(() => document.getElementById('giftcardInput').focus(), 100)
         }
 
@@ -1173,6 +1315,7 @@
                     document.getElementById('giftcardInput').value = ''
                     await checkPremiumStatus()
                     updateUserInterface()
+                    renderGuide()
                 } else {
                     showGiftCardMessage(result.message, 'error')
                 }
@@ -1211,8 +1354,15 @@
                 if (subscription && subscription.expires_at) {
                     const expiryDate = new Date(subscription.expires_at)
                     const now = new Date()
-                    const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
-                    premiumTag = `<span class="premium-tag premium">${daysRemaining} dias</span>`
+                    
+                    if (expiryDate > now) {
+                        const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
+                        premiumTag = `<span class="premium-tag premium">${daysRemaining} dias</span>`
+                    } else {
+                        premiumTag = '<span class="premium-tag free">Gratuito</span>'
+                    }
+                } else {
+                    premiumTag = '<span class="premium-tag free">Gratuito</span>'
                 }
             } else {
                 premiumTag = '<span class="premium-tag free">Gratuito</span>'
@@ -1262,15 +1412,6 @@
             if (existingIcon) existingIcon.remove()
             if (existingPremiumIcon) existingPremiumIcon.remove()
             
-            if (currentUser && !isPremiumUser) {
-                const premiumIconBtn = document.createElement('div')
-                premiumIconBtn.className = 'premium-icon-btn'
-                premiumIconBtn.onclick = showGiftCardModal
-                premiumIconBtn.title = 'Resgatar Gift Card'
-                premiumIconBtn.innerHTML = '<i class="fa-solid fa-gem"></i>'
-                searchContainer.appendChild(premiumIconBtn)
-            }
-            
             if (currentUser) {
                 const userBadge = document.createElement('div')
                 userBadge.className = 'user-badge'
@@ -1318,6 +1459,37 @@
                 
                 searchContainer.appendChild(loginIcon)
             }
+        }
+
+        async function checkPremiumStatus() {
+            isPremiumUser = false
+            
+            if (!currentUser) return
+            
+            const { data: subscription, error } = await supabaseClient
+                .from('premium_subscriptions')
+                .select('is_lifetime, expires_at')
+                .eq('user_id', currentUser.id)
+                .single()
+            
+            if (subscription && subscription.is_lifetime) {
+                isPremiumUser = 'lifetime'
+                return
+            }
+            
+            if (subscription && subscription.expires_at) {
+                const expiryDate = new Date(subscription.expires_at)
+                const now = new Date()
+                
+                if (expiryDate > now) {
+                    isPremiumUser = 'premium'
+                    return
+                }
+            }
+            
+            // Usuário é free - ativa sistema de ads
+            setupPopunder();
+            loadSocialBar();
         }
 
         document.getElementById('loginModal').addEventListener('click', (e) => {
@@ -1409,8 +1581,8 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                if (renderList.length > 0) {
-                    selectedRenderIndex = 0;
+                if (flatChannels.length > 0) {
+                    selectedChannelIndex = 0;
                     selectedBlockIndex = 0;
                     highlightRow(0);
                     searchInput.blur();
@@ -1483,15 +1655,12 @@
                         return;
                     }
                     
-                    if (selectedRenderIndex >= 0 && renderList[selectedRenderIndex]) {
-                        const item = renderList[selectedRenderIndex];
-                        if (item.type === 'channel') {
-                            const blockData = blocksData.find(b => b.renderIndex === selectedRenderIndex && b.blockIndex === selectedBlockIndex);
-                            if (blockData && (blockData.isNow || blockData.isEmpty)) {
-                                openPlayerByIndex(item.channelIndex);
-                            } else if (blockData) {
-                                handleScheduleClick(item.channelIndex, selectedBlockIndex);
-                            }
+                    if (selectedChannelIndex >= 0 && flatChannels[selectedChannelIndex]) {
+                        const blockData = blocksData.find(b => b.channelIndex === selectedChannelIndex && b.blockIndex === selectedBlockIndex);
+                        if (blockData && (blockData.isNow || blockData.isEmpty)) {
+                            openPlayerByIndex(selectedChannelIndex);
+                        } else if (blockData) {
+                            handleScheduleClick(selectedChannelIndex, selectedBlockIndex);
                         }
                     }
                 } else {
@@ -1536,15 +1705,15 @@
         let guideStartTimestamp;
         let guideEndTimestamp;
         let flatChannels = [];
-        let renderList = [];
-        let selectedRenderIndex = 0;
+        let selectedChannelIndex = 0;
         let selectedBlockIndex = 0;
         let usingKeyboard = false;
         let blocksData = [];
         let popupTimeout = null;
         let popupProgressInterval = null;
         let tooltipTimeout = null;
-        let fakeBannerIds = [];
+        // Lista de IDs de slots de anúncio na grade, para carregar após render
+        let adSlotsToLoad = [];
 
         const genreLabels = {
             'general': 'Geral',
@@ -1846,9 +2015,17 @@
 
         setInterval(checkSchedules, 1000);
 
-        function highlightRow(renderIndex) {
+        function highlightRow(channelIndex) {
             document.querySelectorAll('.guide-channel-item').forEach((el, i) => {
-                if (i === renderIndex) {
+                if (i === channelIndex) {
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+            
+            document.querySelectorAll('.guide-programme-row').forEach((el, i) => {
+                if (i === channelIndex) {
                     el.classList.add('selected');
                 } else {
                     el.classList.remove('selected');
@@ -1856,15 +2033,15 @@
             });
         }
 
-        function selectBlock(renderIndex, blockIndex, source) {
-            selectedRenderIndex = renderIndex;
+        function selectBlock(channelIndex, blockIndex, source) {
+            selectedChannelIndex = channelIndex;
             selectedBlockIndex = blockIndex;
             
             document.querySelectorAll('.guide-programme-block').forEach(el => {
                 el.classList.remove('keyboard-hover');
             });
             
-            const blocks = document.querySelectorAll(`.guide-programme-row[data-render-index="${renderIndex}"] .guide-programme-block`);
+            const blocks = document.querySelectorAll(`.guide-programme-row[data-channel-index="${channelIndex}"] .guide-programme-block`);
             if (blocks[blockIndex]) {
                 if (source === 'keyboard') {
                     blocks[blockIndex].classList.add('keyboard-hover');
@@ -1872,11 +2049,10 @@
                     const titleElement = blocks[blockIndex].querySelector('.guide-programme-title');
                     if (titleElement) {
                         const fullText = titleElement.textContent;
-                        const blockData = blocksData.find(b => b.renderIndex === renderIndex && b.blockIndex === blockIndex);
+                        const blockData = blocksData.find(b => b.channelIndex === channelIndex && b.blockIndex === blockIndex);
                         
                         if (blockData && fullText !== 'Sem programação') {
-                            const item = renderList[renderIndex];
-                            const channel = item.type === 'channel' ? flatChannels[item.channelIndex] : null;
+                            const channel = flatChannels[channelIndex];
                             showTooltip(
                                 blocks[blockIndex], 
                                 fullText, 
@@ -1894,7 +2070,7 @@
                 if (source === 'keyboard') {
                     const row = blocks[blockIndex].closest('.guide-programme-row');
                     if (row) {
-                        const guideHeader = row.closest('.guide-wrapper')?.querySelector('.guide-time-header');
+                        const guideHeader = row.closest('.guide-wrapper').querySelector('.guide-time-header');
                         const headerHeight = guideHeader ? guideHeader.offsetHeight : 0;
                         const rowTop = row.offsetTop;
                         mainScroll.scrollTop = rowTop - headerHeight;
@@ -1902,16 +2078,13 @@
                 }
             }
             
-            highlightRow(renderIndex);
+            highlightRow(channelIndex);
         }
 
-        function handleChannelHover(element, renderIndex) {
+        function handleChannelHover(element, channelIndex) {
             if (usingKeyboard || playerOpen) return;
             
-            const item = renderList[renderIndex];
-            if (!item || item.type !== 'channel') return;
-            
-            const channel = flatChannels[item.channelIndex];
+            const channel = flatChannels[channelIndex];
             if (channel) {
                 showTooltip(element, channel.name || '', null, null, null, false);
             }
@@ -1923,19 +2096,18 @@
             }
         }
 
-        function handleBlockHover(element, renderIndex, blockIndex) {
+        function handleBlockHover(element, channelIndex, blockIndex) {
             if (usingKeyboard || playerOpen) return;
             
-            selectBlock(renderIndex, blockIndex, 'mouse');
+            selectBlock(channelIndex, blockIndex, 'mouse');
             
             const titleElement = element.querySelector('.guide-programme-title');
             if (titleElement) {
                 const fullText = titleElement.textContent;
-                const blockData = blocksData.find(b => b.renderIndex === renderIndex && b.blockIndex === blockIndex);
+                const blockData = blocksData.find(b => b.channelIndex === channelIndex && b.blockIndex === blockIndex);
                 
                 if (blockData && fullText !== 'Sem programação') {
-                    const item = renderList[renderIndex];
-                    const channel = item.type === 'channel' ? flatChannels[item.channelIndex] : null;
+                    const channel = flatChannels[channelIndex];
                     showTooltip(
                         element, 
                         fullText, 
@@ -1957,41 +2129,37 @@
         }
 
         function navigateGrid(direction) {
-            if (renderList.length === 0) return;
+            if (flatChannels.length === 0) return;
             
             usingKeyboard = true;
             hideTooltip();
             
             if (direction === 'up') {
-                selectedRenderIndex = (selectedRenderIndex - 1 + renderList.length) % renderList.length;
+                selectedChannelIndex = (selectedChannelIndex - 1 + flatChannels.length) % flatChannels.length;
                 selectedBlockIndex = 0;
             } else if (direction === 'down') {
-                selectedRenderIndex = (selectedRenderIndex + 1) % renderList.length;
+                selectedChannelIndex = (selectedChannelIndex + 1) % flatChannels.length;
                 selectedBlockIndex = 0;
             } else if (direction === 'left') {
-                const blocks = document.querySelectorAll(`.guide-programme-row[data-render-index="${selectedRenderIndex}"] .guide-programme-block`);
-                if (blocks.length > 0) {
-                    if (selectedBlockIndex > 0) {
-                        selectedBlockIndex--;
-                    } else {
-                        selectedBlockIndex = blocks.length - 1;
-                    }
+                const blocks = document.querySelectorAll(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block`);
+                if (selectedBlockIndex > 0) {
+                    selectedBlockIndex--;
+                } else {
+                    selectedBlockIndex = blocks.length - 1;
                 }
             } else if (direction === 'right') {
-                const blocks = document.querySelectorAll(`.guide-programme-row[data-render-index="${selectedRenderIndex}"] .guide-programme-block`);
-                if (blocks.length > 0) {
-                    if (selectedBlockIndex < blocks.length - 1) {
-                        selectedBlockIndex++;
-                    } else {
-                        selectedBlockIndex = 0;
-                    }
+                const blocks = document.querySelectorAll(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block`);
+                if (selectedBlockIndex < blocks.length - 1) {
+                    selectedBlockIndex++;
+                } else {
+                    selectedBlockIndex = 0;
                 }
             }
             
-            selectBlock(selectedRenderIndex, selectedBlockIndex, 'keyboard');
+            selectBlock(selectedChannelIndex, selectedBlockIndex, 'keyboard');
             
             if (direction === 'left' || direction === 'right') {
-                const block = document.querySelector(`.guide-programme-row[data-render-index="${selectedRenderIndex}"] .guide-programme-block:nth-child(${selectedBlockIndex + 1})`);
+                const block = document.querySelector(`.guide-programme-row[data-channel-index="${selectedChannelIndex}"] .guide-programme-block:nth-child(${selectedBlockIndex + 1})`);
                 if (block) {
                     const mainRect = mainScroll.getBoundingClientRect();
                     const blockRect = block.getBoundingClientRect();
@@ -2001,62 +2169,6 @@
                     }
                 }
             }
-        }
-
-        function loadFakeChannelBanner(elementId) {
-            const bannerContainer = document.getElementById(elementId);
-            if (!bannerContainer) return;
-            
-            bannerContainer.innerHTML = '';
-            
-            const script1 = document.createElement('script');
-            script1.textContent = `
-                atOptions = {
-                    'key' : '03ad0caeda3b785cc8ef31e70f215600',
-                    'format' : 'iframe',
-                    'height' : 50,
-                    'width' : 320,
-                    'params' : {}
-                };
-            `;
-            const script2 = document.createElement('script');
-            script2.src = 'https://www.highrevenueformat.com/03ad0caeda3b785cc8ef31e70f215600/invoke.js';
-            
-            bannerContainer.appendChild(script1);
-            bannerContainer.appendChild(script2);
-        }
-
-        function buildRenderList(filteredChannels) {
-            const result = [];
-            let countSinceLastFake = 0;
-            const fakeIds = [];
-            
-            filteredChannels.forEach((channel, idx) => {
-                result.push({ type: 'channel', channelIndex: idx, fakeId: null });
-                countSinceLastFake++;
-                
-                if (countSinceLastFake >= 5) {
-                    countSinceLastFake = 0;
-                    if (Math.random() < 0.5) {
-                        const fakeBaseId = 'fake_' + Date.now() + '_' + idx;
-                        const bannerCount = 2 + Math.floor(Math.random() * 3); // 2 a 4 banners
-                        const bannerIds = [];
-                        for (let i = 0; i < bannerCount; i++) {
-                            const bid = fakeBaseId + '_' + i + '_' + Math.random().toString(36).substr(2, 5);
-                            bannerIds.push(bid);
-                        }
-                        result.push({ 
-                            type: 'fake', 
-                            channelIndex: null, 
-                            fakeId: fakeBaseId,
-                            bannerIds: bannerIds
-                        });
-                        fakeIds.push(...bannerIds);
-                    }
-                }
-            });
-            
-            return { renderList: result, fakeIds: fakeIds };
         }
 
         function renderGuide() {
@@ -2112,9 +2224,6 @@
                 return;
             }
             
-            const { renderList: newRenderList, fakeIds } = buildRenderList(flatChannels);
-            renderList = newRenderList;
-            
             let hoursHtml = '';
             for (let i = 0; i < totalHours; i++) {
                 const hour = (startHour + i) % 24;
@@ -2136,135 +2245,142 @@
             guideEndTimestamp = guideStartTimestamp + totalHours * 3600;
             
             blocksData = [];
-            fakeBannerIds = [];
+            adSlotsToLoad = [];
             
             const nowTimestamp = Math.floor(Date.now() / 1000);
             const totalGuideWidth = totalHours * HOUR_WIDTH;
             
-            renderList.forEach((item, renderIndex) => {
-                if (item.type === 'fake') {
-                    channelListHtml += `
-                        <div class="guide-channel-item fake-channel" data-render-index="${renderIndex}">
-                        </div>
-                    `;
+            // Decide se insere anúncios: só para usuários não-premium
+            const showAds = !isPremiumUser;
+            // Insere um anúncio a cada 6 canais
+            const AD_INTERVAL = 6;
+            let channelsSinceLastAd = 0;
+            
+            // renderIndex é o índice real na lista renderizada (incluindo linhas fake de ads)
+            let renderIndex = 0;
+            
+            flatChannels.forEach((channel, channelIndex) => {
+                const logo = getProxiedLogo(channel.logo || channel.cover);
+                const programmes = getGuideProgrammes(channel);
+                
+                channelListHtml += `
+                    <div class="guide-channel-item" 
+                         onclick='openPlayerByIndex(${channelIndex})' 
+                         onmouseenter='handleChannelHover(this, ${channelIndex})'
+                         onmouseleave='handleChannelLeave()'>
+                        <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
+                    </div>
+                `;
+                
+                let rowHtml = `<div class="guide-programme-row" data-channel-index="${channelIndex}">`;
+                
+                let currentTime = guideStartTimestamp;
+                let programmeIndex = 0;
+                let blockIndex = 0;
+                
+                while (currentTime < guideEndTimestamp) {
+                    const prog = programmes[programmeIndex];
                     
-                    let bannersHtml = '';
-                    (item.bannerIds || []).forEach(bid => {
-                        bannersHtml += `<div class="fake-banner-container" id="${bid}"></div>`;
-                        fakeBannerIds.push(bid);
-                    });
-                    
-                    programmesHtml += `
-                        <div class="fake-programme-row" data-render-index="${renderIndex}">
-                            <div class="fake-programme-block" style="width: ${totalGuideWidth}px; min-width: ${totalGuideWidth}px;">
-                                ${bannersHtml}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    const channel = flatChannels[item.channelIndex];
-                    const logo = getProxiedLogo(channel.logo || channel.cover);
-                    const programmes = getGuideProgrammes(channel);
-                    
-                    channelListHtml += `
-                        <div class="guide-channel-item" 
-                             data-render-index="${renderIndex}"
-                             onclick='openPlayerByIndex(${item.channelIndex})' 
-                             onmouseenter='handleChannelHover(this, ${renderIndex})'
-                             onmouseleave='handleChannelLeave()'>
-                            <img src="${logo}" alt="${channel.name}" onerror="this.style.display='none'">
-                        </div>
-                    `;
-                    
-                    let rowHtml = `<div class="guide-programme-row" data-render-index="${renderIndex}">`;
-                    
-                    let currentTime = guideStartTimestamp;
-                    let programmeIndex = 0;
-                    let blockIndex = 0;
-                    
-                    while (currentTime < guideEndTimestamp) {
-                        const prog = programmes[programmeIndex];
-                        
-                        if (!prog) {
-                            const width = Math.round(((guideEndTimestamp - currentTime) / 3600) * HOUR_WIDTH);
-                            rowHtml += `
-                                <div class="guide-programme-block guide-programme-empty" 
-                                     style="width: ${width}px; min-width: ${width}px;"
-                                     onclick='openPlayerByIndex(${item.channelIndex})'
-                                     onmouseenter='handleBlockHover(this, ${renderIndex}, ${blockIndex})'
-                                     onmouseleave='handleBlockLeave()'>
-                                </div>
-                            `;
-                            blocksData.push({ 
-                                renderIndex,
-                                channelIndex: item.channelIndex,
-                                blockIndex, 
-                                isNow: false, 
-                                isEmpty: true,
-                                startTime: currentTime,
-                                endTime: guideEndTimestamp
-                            });
-                            break;
-                        }
-                        
-                        let blockStart;
-                        let blockEnd;
-                        
-                        if (programmeIndex === 0 && prog.isNow) {
-                            blockStart = currentTime;
-                            blockEnd = Math.min(prog.end_timestamp || guideEndTimestamp, guideEndTimestamp);
-                        } else {
-                            blockStart = Math.max(prog.start_timestamp || currentTime, currentTime);
-                            blockEnd = Math.min(prog.end_timestamp || blockStart + 3600, guideEndTimestamp);
-                        }
-                        
-                        if (blockEnd <= blockStart) {
-                            programmeIndex++;
-                            continue;
-                        }
-                        
-                        const duration = blockEnd - blockStart;
-                        const width = Math.round((duration / 3600) * HOUR_WIDTH);
-                        
-                        const isNow = blockStart <= nowTimestamp && blockEnd > nowTimestamp;
-                        const isFuture = blockStart > nowTimestamp;
-                        
-                        const clickHandler = isNow 
-                            ? `onclick='openPlayerByIndex(${item.channelIndex})'` 
-                            : isFuture 
-                                ? `onclick='handleScheduleClick(${item.channelIndex}, ${blockIndex})'` 
-                                : '';
-                        
-                        const futureClass = isFuture ? 'guide-programme-future' : '';
-                        const nowClass = isNow ? 'guide-programme-now' : '';
-                        
+                    if (!prog) {
+                        const width = Math.round(((guideEndTimestamp - currentTime) / 3600) * HOUR_WIDTH);
                         rowHtml += `
-                            <div class="guide-programme-block ${nowClass} ${futureClass}" 
+                            <div class="guide-programme-block guide-programme-empty" 
                                  style="width: ${width}px; min-width: ${width}px;"
-                                 ${clickHandler}
-                                 onmouseenter='handleBlockHover(this, ${renderIndex}, ${blockIndex})'
+                                 onclick='openPlayerByIndex(${channelIndex})'
+                                 onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
                                  onmouseleave='handleBlockLeave()'>
-                                <span class="guide-programme-title">${prog.title || ''}</span>
-                                <span class="guide-programme-time">${formatTime(blockStart)}</span>
                             </div>
                         `;
-                        
                         blocksData.push({ 
-                            renderIndex,
-                            channelIndex: item.channelIndex,
+                            channelIndex, 
                             blockIndex, 
-                            isNow,
-                            startTime: blockStart,
-                            endTime: blockEnd
+                            isNow: false, 
+                            isEmpty: true,
+                            startTime: currentTime,
+                            endTime: guideEndTimestamp
                         });
-                        
-                        currentTime = blockEnd;
-                        programmeIndex++;
-                        blockIndex++;
+                        break;
                     }
                     
-                    rowHtml += '</div>';
-                    programmesHtml += rowHtml;
+                    let blockStart;
+                    let blockEnd;
+                    
+                    if (programmeIndex === 0 && prog.isNow) {
+                        blockStart = currentTime;
+                        blockEnd = Math.min(prog.end_timestamp || guideEndTimestamp, guideEndTimestamp);
+                    } else {
+                        blockStart = Math.max(prog.start_timestamp || currentTime, currentTime);
+                        blockEnd = Math.min(prog.end_timestamp || blockStart + 3600, guideEndTimestamp);
+                    }
+                    
+                    if (blockEnd <= blockStart) {
+                        programmeIndex++;
+                        continue;
+                    }
+                    
+                    const duration = blockEnd - blockStart;
+                    const width = Math.round((duration / 3600) * HOUR_WIDTH);
+                    
+                    const isNow = blockStart <= nowTimestamp && blockEnd > nowTimestamp;
+                    const isFuture = blockStart > nowTimestamp;
+                    
+                    const clickHandler = isNow 
+                        ? `onclick='openPlayerByIndex(${channelIndex})'` 
+                        : isFuture 
+                            ? `onclick='handleScheduleClick(${channelIndex}, ${blockIndex})'` 
+                            : '';
+                    
+                    const futureClass = isFuture ? 'guide-programme-future' : '';
+                    const nowClass = isNow ? 'guide-programme-now' : '';
+                    
+                    rowHtml += `
+                        <div class="guide-programme-block ${nowClass} ${futureClass}" 
+                             style="width: ${width}px; min-width: ${width}px;"
+                             ${clickHandler}
+                             onmouseenter='handleBlockHover(this, ${channelIndex}, ${blockIndex})'
+                             onmouseleave='handleBlockLeave()'>
+                            <span class="guide-programme-title">${prog.title || ''}</span>
+                            <span class="guide-programme-time">${formatTime(blockStart)}</span>
+                        </div>
+                    `;
+                    
+                    blocksData.push({ 
+                        channelIndex, 
+                        blockIndex, 
+                        isNow,
+                        startTime: blockStart,
+                        endTime: blockEnd
+                    });
+                    
+                    currentTime = blockEnd;
+                    programmeIndex++;
+                    blockIndex++;
+                }
+                
+                rowHtml += '</div>';
+                programmesHtml += rowHtml;
+                renderIndex++;
+                channelsSinceLastAd++;
+                
+                // Insere linha de anúncio após este canal (se free user e atingiu intervalo)
+                if (showAds && channelsSinceLastAd >= AD_INTERVAL && channelIndex < flatChannels.length - 1) {
+                    channelsSinceLastAd = 0;
+                    const adSlotId = 'ad_slot_' + renderIndex + '_' + Date.now();
+                    
+                    channelListHtml += `
+                        <div class="guide-channel-item fake-channel"></div>
+                    `;
+                    
+                    programmesHtml += `
+                        <div class="fake-programme-row">
+                            <div class="fake-programme-block" style="width: ${totalGuideWidth}px; min-width: ${totalGuideWidth}px;">
+                                <div class="ad-slot-small" id="${adSlotId}"></div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    adSlotsToLoad.push(adSlotId);
+                    renderIndex++;
                 }
             });
             
@@ -2286,13 +2402,14 @@
                 </div>
             `;
             
-            fakeBannerIds.forEach(bid => {
-                loadFakeChannelBanner(bid);
+            // Carrega os anúncios da grade em iframes isolados
+            adSlotsToLoad.forEach(slotId => {
+                loadAdIntoIframe(slotId, ADS_CONFIG.bannerSmall.config, ADS_CONFIG.bannerSmall.invokeUrl);
             });
             
             updateNowLine();
             
-            selectedRenderIndex = 0;
+            selectedChannelIndex = 0;
             selectedBlockIndex = 0;
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -2321,11 +2438,7 @@
             const channel = flatChannels[index];
             if (!channel) return;
             
-            const renderIdx = renderList.findIndex(r => r.type === 'channel' && r.channelIndex === index);
-            if (renderIdx >= 0) {
-                selectedRenderIndex = renderIdx;
-            }
-            
+            selectedChannelIndex = index;
             playerOpen = true;
             hideTooltip();
 
@@ -2339,6 +2452,11 @@
             player.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             showPlayerHeader();
+            
+            // Mostra banner de anúncio no player apenas para free users
+            if (!isPremiumUser) {
+                showPlayerAdBanner();
+            }
             
             const channelSlug = channel.slug || channel.name || '';
             const newUrl = window.location.pathname + '?c=' + encodeURIComponent(channelSlug.toLowerCase());
@@ -2358,6 +2476,7 @@
             document.body.style.overflow = '';
             playerHeader.classList.remove('hidden-header');
             hideTooltip();
+            hidePlayerAdBanner();
             
             const newUrl = window.location.pathname;
             history.pushState({ playerOpen: false }, '', newUrl);
@@ -2369,21 +2488,31 @@
                     player.requestFullscreen();
                     fullscreenBtn.querySelector('i').className = 'fa-solid fa-compress';
                     fullscreenBtn.title = 'Sair da tela cheia';
+                    // Esconde banner de anúncio em fullscreen
+                    const banner = document.getElementById('playerAdBanner');
+                    if (banner) banner.classList.add('hidden-banner');
                 }
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                     fullscreenBtn.querySelector('i').className = 'fa-solid fa-expand';
                     fullscreenBtn.title = 'Maximizar';
+                    // Mostra banner novamente ao sair do fullscreen
+                    const banner = document.getElementById('playerAdBanner');
+                    if (banner && !isPremiumUser) banner.classList.remove('hidden-banner');
                 }
             }
             showPlayerHeader();
         }
 
         document.addEventListener('fullscreenchange', () => {
+            const banner = document.getElementById('playerAdBanner');
             if (!document.fullscreenElement) {
                 fullscreenBtn.querySelector('i').className = 'fa-solid fa-expand';
                 fullscreenBtn.title = 'Maximizar';
+                if (banner && !isPremiumUser) banner.classList.remove('hidden-banner');
+            } else {
+                if (banner) banner.classList.add('hidden-banner');
             }
         });
 
@@ -2395,33 +2524,20 @@
                 document.body.style.overflow = '';
                 playerHeader.classList.remove('hidden-header');
                 hideTooltip();
+                hidePlayerAdBanner();
             }
         });
 
         function navigatePlayer(direction) {
-            if (renderList.length === 0) return;
+            if (flatChannels.length === 0) return;
             
-            const currentRenderIdx = renderList.findIndex(r => r.type === 'channel' && r.channelIndex === flatChannels.indexOf(flatChannels.find((c, i) => {
-                const rIdx = renderList.findIndex(rr => rr.type === 'channel' && rr.channelIndex === i);
-                return rIdx === selectedRenderIndex;
-            })));
-            
-            let newRenderIndex = selectedRenderIndex;
-            let attempts = 0;
-            
-            do {
-                if (direction === 'left' || direction === 'up') {
-                    newRenderIndex = (newRenderIndex - 1 + renderList.length) % renderList.length;
-                } else if (direction === 'right' || direction === 'down') {
-                    newRenderIndex = (newRenderIndex + 1) % renderList.length;
-                }
-                attempts++;
-            } while (renderList[newRenderIndex].type !== 'channel' && attempts < renderList.length);
-            
-            if (renderList[newRenderIndex].type === 'channel') {
-                selectedRenderIndex = newRenderIndex;
-                openPlayerByIndex(renderList[newRenderIndex].channelIndex);
+            if (direction === 'left' || direction === 'up') {
+                selectedChannelIndex = (selectedChannelIndex - 1 + flatChannels.length) % flatChannels.length;
+            } else if (direction === 'right' || direction === 'down') {
+                selectedChannelIndex = (selectedChannelIndex + 1) % flatChannels.length;
             }
+            
+            openPlayerByIndex(selectedChannelIndex);
         }
 
         player.addEventListener('mousemove', () => {
