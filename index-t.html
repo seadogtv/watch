@@ -6,10 +6,10 @@
     <title>seadog</title>
     <link rel="icon" type="image/png" href="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/icon-w.png" media="(prefers-color-scheme: dark)">
     <link rel="icon" type="image/png" href="https://orbitcloud.vaneltonmedia.com/fb8b4ce080e59805fcd247391a5574e8/icon-d.png" media="(prefers-color-scheme: light)">
-    <script src="https://cdn.tailwindcss.com">
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://pl31236725.profitableratecpmnetwork.com/0d/8a/43/0d8a4370ddb682fe52429cccbd50b847.js"></script>
+    <!-- Script do Popunder (novo) -->
+    <script type="text/javascript" src="https://pl31236624.profitableratecpmnetwork.com/52/41/d6/5241d6d4f6b8543cd3e75c0f9bfa2765.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
@@ -854,6 +854,23 @@
             border-radius: 4px;
             background: #1a1a1a;
         }
+        /* Banner fixo no rodapé */
+        .fixed-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 150;
+            background: #0a0a0a;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+        .fixed-banner.show {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -879,6 +896,11 @@
     <main id="mainScroll">
         <div id="content"></div>
     </main>
+
+    <!-- Banner fixo no rodapé -->
+    <div class="fixed-banner" id="fixedBanner">
+        <div id="fixedBannerContent"></div>
+    </div>
 
     <div id="tooltip" class="programme-tooltip"></div>
 
@@ -987,7 +1009,10 @@
                 updateAdsVisibility()
             } else {
                 updateAdsVisibility()
-                openPopunderOnce()
+                // Abrir popunder após o carregamento
+                setTimeout(() => {
+                    openPopunderOnce()
+                }, 3000)
             }
         }
 
@@ -1012,9 +1037,25 @@
             
             popunderOpened = true
             
+            // O script do popunder já está incluído no HTML
+            // Ele será acionado automaticamente
+            console.log('Popunder script loaded and ready');
+            
+            // Fallback: tentar abrir manualmente se o script não funcionar
             setTimeout(() => {
-                window.open('https://www.profitableratecpmnetwork.com/zjfzugtrct?key=3c946172ea68754419b9ef5309b311f8', '_blank')
-            }, 2000)
+                try {
+                    // Verificar se a função do popunder foi carregada
+                    if (typeof atOptions !== 'undefined' || typeof invideo_options !== 'undefined') {
+                        console.log('Popunder script active');
+                    } else {
+                        console.log('Popunder script not active, trying alternative');
+                        // Tentativa alternativa
+                        window.open('https://www.profitableratecpmnetwork.com/zjfzugtrct?key=3c946172ea68754419b9ef5309b311f8', '_blank');
+                    }
+                } catch (e) {
+                    console.log('Popunder error:', e);
+                }
+            }, 2000);
         }
 
         async function loadUserSchedules() {
@@ -1065,7 +1106,36 @@
         async function updateAdsVisibility() {
             if (isPremiumUser) {
                 clearAllBanners()
+                document.getElementById('fixedBanner').classList.remove('show')
+            } else {
+                // Mostrar banner fixo para usuários não premium
+                loadFixedBanner()
             }
+        }
+
+        function loadFixedBanner() {
+            const bannerContainer = document.getElementById('fixedBannerContent')
+            if (!bannerContainer || isPremiumUser) return
+            
+            const fixedBanner = document.getElementById('fixedBanner')
+            fixedBanner.classList.add('show')
+            bannerContainer.innerHTML = ''
+            
+            const script1 = document.createElement('script')
+            script1.textContent = `
+                atOptions = {
+                    'key' : '6bbd42b0f7510ea5daa0cf8f14cf4b7c',
+                    'format' : 'iframe',
+                    'height' : 60,
+                    'width' : 468,
+                    'params' : {}
+                };
+            `
+            const script2 = document.createElement('script')
+            script2.src = 'https://www.highrevenueformat.com/6bbd42b0f7510ea5daa0cf8f14cf4b7c/invoke.js'
+            
+            bannerContainer.appendChild(script1)
+            bannerContainer.appendChild(script2)
         }
 
         function loadBanner320(bannerId) {
@@ -1128,6 +1198,7 @@
             clearBanner('loginBanner')
             clearBanner('giftcardBanner')
             clearBanner('scheduleBanner')
+            document.getElementById('fixedBanner').classList.remove('show')
         }
 
         function showLoginModal() {
@@ -2333,6 +2404,9 @@
             document.body.style.overflow = 'hidden';
             showPlayerHeader();
             
+            // Esconder banner fixo quando o player está aberto
+            document.getElementById('fixedBanner').classList.remove('show');
+            
             const channelSlug = channel.slug || channel.name || '';
             const newUrl = window.location.pathname + '?c=' + encodeURIComponent(channelSlug.toLowerCase());
             history.pushState({ playerOpen: true, channel: channelSlug.toLowerCase() }, '', newUrl);
@@ -2351,6 +2425,11 @@
             document.body.style.overflow = '';
             playerHeader.classList.remove('hidden-header');
             hideTooltip();
+            
+            // Restaurar banner fixo se não for premium
+            if (!isPremiumUser) {
+                document.getElementById('fixedBanner').classList.add('show');
+            }
             
             const newUrl = window.location.pathname;
             history.pushState({ playerOpen: false }, '', newUrl);
@@ -2388,6 +2467,10 @@
                 document.body.style.overflow = '';
                 playerHeader.classList.remove('hidden-header');
                 hideTooltip();
+                
+                if (!isPremiumUser) {
+                    document.getElementById('fixedBanner').classList.add('show');
+                }
             }
         });
 
