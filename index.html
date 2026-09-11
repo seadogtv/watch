@@ -1466,8 +1466,8 @@
             renderGuide();
         });
 
-        const GUIDE_API = 'https://disret.disret.workers.dev/?url=https://reidosembeds.online/api/channels';
-        const PREVIEW_API = 'https://disret.disret.workers.dev/?url=https://img.faz-o-eli.online/';
+        const GUIDE_API = 'https://reidosembeds.online/api/channels';
+        const PREVIEW_API = 'https://img.faz-o-eli.online/';
         const content = document.getElementById('content');
         const mainScroll = document.getElementById('mainScroll');
         const player = document.getElementById('player');
@@ -1524,7 +1524,7 @@
 
         function getProxiedLogo(logoUrl) {
             if (!logoUrl) return '';
-            return 'https://disret.disret.workers.dev/?url=' + encodeURIComponent(logoUrl);
+            return '' + encodeURIComponent(logoUrl);
         }
 
         function getPreviewUrl(slug) {
